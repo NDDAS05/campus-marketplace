@@ -15,15 +15,27 @@ const userSchema = new mongoose.Schema({
         required:true,
         unique:true,
     },
-    password:{
-        type:String,
-        required:true,
+    password: {
+        type: String,
+        required: function () {
+            return this.authProvider === "local"; // only required for email/password users
+        },
     },
-    role:{
-        type:String,
-        enum:["user","admin"],
-        default:"user",
+    authProvider: {
+        type: String,
+        enum: ["local", "google"],
+        default: "local",
     },
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true, 
+    },
+    // role:{
+    //     type:String,
+    //     enum:["user","admin"],
+    //     default:"user",
+    // },
     college:{
         type:String,
         default:"IIEST Shibpur",
