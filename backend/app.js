@@ -1,12 +1,29 @@
 const express = require("express");
-
+const morgan = require("morgan");
 const app = express();
 const listingRoutes = require("./src/routes/listing.routes");
-app.use(express.json());
+const authRoutes = require("./src/routes/auth.routes");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
 
+app.use(cors({
+    origin:process.env.CLIENT_URL,
+    credentials:true
+}));
+
+app.use(cookieParser());
+app.use(express.json()); // For json payload
+app.use(express.urlencoded({ extended: true })); // For HTML forms
+
+if(process.env.NODE_ENV=="development")
+{
+    app.use(morgan("dev"));
+}
+
+app.use("/api/auth",authRoutes);
 app.use("/api/listings", listingRoutes);
 
-app.get("/api",(req,res)=>{
+app.get("/api/test",(req,res)=>{
     res.json({message:"Campus MarketPlace API is Running Perfectly"});
 });
 
