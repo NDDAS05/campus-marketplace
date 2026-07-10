@@ -67,7 +67,7 @@ const listingSchema = new mongoose.Schema(
     ],
     location: {
       type: String,
-      default: "Shibpur,Howrah",
+      default: "Shibpur, Howrah",
     },
     status: {
       type: String,

@@ -1,21 +1,14 @@
 const multer = require("multer");
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("../utils/cloudinary");
 
-const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-        folder: "campus-marketplace/listings",
-        allowed_formats: ["jpg", "jpeg", "png", "webp"],
-        transformation: [{ width: 1000, height: 1000, crop: "limit" }],
-    },
-});
+// Store file in memory temporarily instead of disk
+const storage = multer.memoryStorage();
 
 const upload = multer({
-    storage: storage,
+    storage,
     limits: {
         fileSize: 5 * 1024 * 1024, // 5MB per image
-        files: 10,                  // max 10 images per listing
+        files: 10,
     },
     fileFilter: (req, file, cb) => {
         const allowed = ["image/jpeg", "image/png", "image/webp"];
@@ -27,4 +20,21 @@ const upload = multer({
     },
 });
 
-module.exports = upload;
+// Helper to upload a single buffer to Cloudinary
+const uploadToCloudinary = (buffer, mimetype) => {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            {
+                folder: "campus-marketplace/listings",
+                transformation: [{ width: 1000, height: 1000, crop: "limit" }],
+            },
+            (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+            }
+        );
+        stream.end(buffer);
+    });
+};
+
+module.exports = { upload, uploadToCloudinary };

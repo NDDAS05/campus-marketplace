@@ -1,6 +1,7 @@
 const { Listing } = require("../models/Listing");
 const { User } = require("../models/User"); 
 const cloudinary = require("../utils/cloudinary");
+const { upload, uploadToCloudinary } = require("../middleware/upload.middleware");
 
 // 1. Extracting public ID from the image URL
 //https://res.cloudinary.com/demo/image/upload/v12345678/listings/electronics/phone.jpg
@@ -33,23 +34,13 @@ const createListing = async (req, res)=>{
         // Extracted from frontend form. These are text_based.
         const { title, description, price, category, count, location } = req.body;
 
-        if(!req.files || req.files.length < 4){
-            // If some files are already uploaded to cloudinary, we delete them.
-            if(req.files && req.files.length > 0){
-                // Promise.all takes ARRAY OF PROMISES and resolves them all. If any of them fails, it will throw an error.
-                await Promise.all(
-                    req.files.map((individualFile)=>{
-                        cloudinary.uploader.destroy(getPublicId(individualFile.path))
-                    })
-                );
-            }
+        // Upload all images to Cloudinary from memory
+        const uploadedImages = await Promise.all(
+            req.files.map((file) => uploadToCloudinary(file.buffer, file.mimetype))
+        );
 
-            return res.status(400).json({ message: "At least 4 images are required." });
-        }
-        // db stores image urls only, so we map the req.files array to get the path of each file and store it in the images array.
-        const images = req.files.map((file)=>{
-            return file.path;
-        });
+        // db stores image urls only, so we map the req.files array to get the path of each file and store it in the images array.f
+        const images = uploadedImages.map((result) => result.secure_url);
 
         // Creating a new listing to fill in the listing schema with new document
         const listing = await Listing.create({
