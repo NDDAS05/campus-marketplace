@@ -1,6 +1,8 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { User } = require("../models/User.js");
+const wrapAsync = require("../utils/wrapAsync");
+
 
 const signToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
@@ -17,10 +19,9 @@ const sendTokenCookie = (res, token) => {
   });
 };
 
-exports.register = async (req, res, next) => {
+exports.register = wrapAsync(async (req, res, next) => {
   console.log(req.body);
-  try {
-    const { name, username, email, password, college } = req.body;
+    const { name, username, email, password, college, year, semester, stream } = req.body;
 
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
@@ -29,12 +30,22 @@ exports.register = async (req, res, next) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Check added: only iiest stds can register.
+    const allowedDomain = "students.iiests.ac.in";
+    if (!email.endsWith(`@${allowedDomain}`)) {
+      return res.status(400).json({ 
+        message: "Only IIEST Shibpur student emails are allowed" 
+      });
+    }
     const user = await User.create({
       name,
       username,
       email,
       password: hashedPassword,
       college,
+      year,
+      semester,
+      stream, // Added for better suggestion (suggesting a ME std ME items and not CST/IT items)
       authProvider: "local",
     });
 
@@ -49,13 +60,9 @@ exports.register = async (req, res, next) => {
         email: user.email,
       },
     });
-  } catch (err) {
-    next(err);
-  }
-};
+});
 
-exports.login = async (req, res, next) => {
-  try {
+exports.login = wrapAsync( async (req, res, next) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
 
@@ -85,15 +92,8 @@ exports.login = async (req, res, next) => {
         email: user.email,
       },
     });
-  } catch (err) {
-    next(err);
-  }
-};
+});
 
-exports.getMe = async (req,res,next) => {
-  try {
+exports.getMe = wrapAsync(async (req,res,next) => {
     res.status(200).json({user:req.user});
-  } catch(err){
-    next(err);
-  }
-}
+});

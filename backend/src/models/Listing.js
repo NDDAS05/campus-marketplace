@@ -27,19 +27,28 @@ const listingSchema = new mongoose.Schema(
       // added more categories to the enum for better classification of items
       type: String,
       required: true,
-      enum: ["Item", "Service"],
+      enum: [
+        "Books",
+        "Electronics",
+        "Cycles",
+        "Hostel Essentials",
+        "Stationery",
+        "Clothing",
+        "Sports",
+        "Other",
+      ],
     },
     seller: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    // sellerYear: {
-    //   type: String,
-    // },
-    // sellerDepartment: {
-    //   type: String,
-    // },
+    sellerYear: {
+      type: String,
+    },
+    sellerDepartment: {
+      type: String,
+    },
     title: {
       type: String,
       required: true,
@@ -66,6 +75,7 @@ const listingSchema = new mongoose.Schema(
       default: "Listed",
     },
     price: {
+      // Added item price field
       type: Number,
       required: true,
     },
