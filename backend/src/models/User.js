@@ -15,14 +15,21 @@ const userSchema = new mongoose.Schema({
         required:true,
         unique:true,
     },
-    password:{
-        type:String,
-        required:true,
+    password: {
+        type: String,
+        required: function () {
+            return this.authProvider === "local"; // only required for email/password users
+        },
     },
-    role:{
-        type:String,
-        enum:["user","admin"],
-        default:"user",
+    authProvider: {
+        type: String,
+        enum: ["local", "google"],
+        default: "local",
+    },
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true, 
     },
     college:{
         type:String,
@@ -39,6 +46,10 @@ const userSchema = new mongoose.Schema({
     year:{
         type:String,
         enum:["1st Year","2nd Year","3rd Year","4th Year","5th Year","Graduated"],
+    },
+    semester:{
+        type:String,
+        enum:["1st Sem","2nd Sem","3rd Sem","4th Sem","5th Sem","6th Sem","7th Sem","8th Sem"]
     },
     contactInfo:{
         type:String,
@@ -58,9 +69,7 @@ const userSchema = new mongoose.Schema({
             type:mongoose.Schema.Types.ObjectId,
             ref:"Listing",
         }
-    ]},{
-    timestamps: true
-});
+    ]},{ timestamps: true });
 
 const User = mongoose.model("User",userSchema);
 module.exports = {User};

@@ -1,6 +1,10 @@
 const { Listing } = require("../models/Listing");
 const { User } = require("../models/User"); 
 const cloudinary = require("../utils/cloudinary");
+const { upload, uploadToCloudinary } = require("../middleware/upload.middleware");
+const wrapAsync = require("../utils/wrapAsync");
+const mongoose = require("mongoose");
+
 
 // 1. Extracting public ID from the image URL
 //https://res.cloudinary.com/demo/image/upload/v12345678/listings/electronics/phone.jpg
@@ -26,36 +30,26 @@ const getPublicId = (imageUrl)=>{
 }
 
 //  Create listing: we need information from form: item name, description, its price, category, number of items, image .
-const createListing = async (req, res)=>{
+const createListing = wrapAsync(async (req, res)=>{
     // Since middleware intercepts first, the images, whether limited to 4 or not are already uploaded to cloudinary. We need to handle that.
     // no less than 4 image is allowed.
-    try{
         // Extracted from frontend form. These are text_based.
         const { title, description, price, category, count, location } = req.body;
 
-        if(!req.files || req.files.length < 4){
-            // If some files are already uploaded to cloudinary, we delete them.
-            if(req.files && req.files.length > 0){
-                // Promise.all takes ARRAY OF PROMISES and resolves them all. If any of them fails, it will throw an error.
-                await Promise.all(
-                    req.files.map((individualFile)=>{
-                        cloudinary.uploader.destroy(getPublicId(individualFile.path))
-                    })
-                );
-            }
+        // Upload all images to Cloudinary from memory
+        const uploadedImages = await Promise.all(
+            req.files.map((file) => uploadToCloudinary(file.buffer, file.mimetype))
+        );
 
-            return res.status(400).json({ message: "At least 4 images are required." });
-        }
-        // db stores image urls only, so we map the req.files array to get the path of each file and store it in the images array.
-        const images = req.files.map((file)=>{
-            return file.path;
-        });
+        // db stores image urls only, so we map the req.files array to get the path of each file and store it in the images array.f
+        const images = uploadedImages.map((result) => result.secure_url);
 
         // Creating a new listing to fill in the listing schema with new document
         const listing = await Listing.create({
             category,
             seller: req.user._id,
             sellerYear: req.user.year,
+            sellerName: req.user.username,
             sellerDepartment: req.user.department,
             title,
             description,
@@ -75,109 +69,113 @@ const createListing = async (req, res)=>{
         });
 
         res.status(201).json({ message: "Listing created successfully", listing});
-
-    }catch(error){
-        res.status(500).json({message: error.message});
-    }
-};
+});
 
 // Get listings route
-const getListings = async (req, res) => {
-    try{
-        const{
-            category,
-            status,
-            search,
-            page=1,
-            limit=10,
-            after, // Pagination: after is the last listing's ID from the previous page. We will fetch listings after this ID.
-            // Since sorted in descending order, we will fetch listings with ID less than this ID i.e. posted before this listing.
-        } = req.query;
+const getListings = wrapAsync(async (req, res) => {
+    const { category, status, search, page = 1, limit = 10, after } = req.query;
+    
+    const pipeline = [];
 
-        const filter = {};
-
-        filter.status = status || "Listed"; // Default to "Listed" if not provided
-        if(category){
-            filter.category = category;
-        }
-
-        if (search) {
-            filter.$or = [
-                { title: { $regex: search, $options: "i" } },
-                { description: { $regex: search, $options: "i" } },
-            ];
-        }
-        // Cursor-based pagination
-        if (after) {
-            filter._id = { $lt: after };
-        }
-
-        const listings = await Listing.find(filter)
-            .sort({ _id: -1 })           // newest first DESC sorting
-            .limit(Number(limit))
-            .populate("seller", "name username year department");
-            // mongoose populate() method is used to replace the specified field in the document with the document from another collection. In this case, we are populating the "seller" field of the Listing model with the "name", "username", "year", and "department" fields from the User model.
-
-            /*1. The First Parameter ("seller")
-            This tells Mongoose which path in your current schema to look at. It tells the server: "Find the seller field inside the Listing document, grab the ID hidden inside it, and check which model it references."
-
-            2. The Second Parameter ("name username year department")
-            This is called Field Selection. By default, if you just wrote .populate("seller"), Mongoose would dump everything it knows about that user into the response—including sensitive info like their hashed password, email, or account creation dates.
-
-            By passing this space-separated string, you are setting strict boundaries. You are saying: "Only bring back the seller's name, username, year, and department. Leave everything else behind in the database for security."
-
-            The Final Result
-            Once .populate() finishes its job, the data sent back to your frontend turns into a neat, nested object.
-            */
-
-
-        const total = await Listing.countDocuments(filter);
-
-        res.status(200).json({
-            listings,
-            pagination: {
-                total,
-                page: Number(page),
-                limit: Number(limit),
-                hasMore: listings.length === Number(limit),
-                // A boolean indicating if there might be more data left to fetch (true if the server returned a full page of items).
-                nextCursor: listings.length > 0 ? listings[listings.length - 1]._id : null,
-                // Determines the cursor for the next request. If listings were found, it grabs the ID of the very last item in the array. If the array is empty, it sets it to null.
-                // Used for infinite scrolling. Frontend saves this. When user reaches end of the page, frontend makes
-                // api call with THIS nextCusror as the "after" parameter of the URL/query.
-                // Thus the next call displays listings after this listing, i.e. older listings.
-            },
+    // 1. Atlas Search MUST be the very first stage in the pipeline
+    if (search) {
+        pipeline.unshift({
+            $search: {
+                index: "default", 
+                compound: {
+                    should: [
+                        { text: { query: search, path: "category", score: { boost: { value: 5 } } } },
+                        { text: { query: search, path: "title", score: { boost: { value: 3 } } } },
+                        { text: { query: search, path: "sellerDepartment", score: { boost: { value: 2 } } } },
+                        { text: { query: search, path: "description", score: { boost: { value: 1 } } } },
+                        { text: { query: search, path: "sellerName", score: { boost: { value: 1 } } } }
+                    ]
+                }
+            }
         });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
     }
-};
 
-// Get suggested listings based on user's year and department
-const getSuggestedListings = async (req, res) => {
-    try {
-        const { year, department, _id } = req.user;
+    // 2. Standard Filters
+    const matchStage = { status: status || "Listed" };
+    if (category) matchStage.category = category;
+    if (after) matchStage._id = { $lt: new mongoose.Types.ObjectId(after) };
 
-        const suggested = await Listing.find({
-            status: "Listed",
-            seller: { $ne: _id },         // don't show user's own listings
-            $or: [
-                { sellerYear: year },
-                { sellerDepartment: department },
-            ],
-        })
-            .sort({ createdAt: -1 })
-            .limit(10)
-            .populate("seller", "name username year department");
+    pipeline.push({ $match: matchStage });
 
-        res.status(200).json({ listings: suggested });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+    // 3. Sorting & Pagination
+    // If searching, Atlas Search already sorts by relevance score automatically! 
+    // We only sort by _id (newest) if we are NOT doing a text search.
+    if (!search) {
+        pipeline.push({ $sort: { _id: -1 } });
     }
-};
+    pipeline.push({ $limit: Number(limit) });
 
-const getListingById = async (req, res) => {
-    try {
+    // 4. Populate Seller Info (Using Aggregation $lookup)
+    pipeline.push({
+        $lookup: {
+            from: "users", // MongoDB collections are lowercase and plural
+            localField: "seller",
+            foreignField: "_id",
+            as: "seller"
+        }
+    });
+    pipeline.push({ $unwind: "$seller" });
+    
+    // Hide sensitive seller info in the search feed
+    pipeline.push({
+        $project: {
+            "seller.password": 0,
+            "seller.wishlist": 0,
+            "seller.myListings": 0,
+            "seller.email": 0,
+            "seller.contactInfo": 0
+        }
+    });
+
+    const listings = await Listing.aggregate(pipeline);
+
+    // Get total count (for pagination)
+    let total = 0;
+    if (search) {
+        // If searching, we count the aggregation results
+        const totalPipeline = [...pipeline];
+        totalPipeline.splice(-4); // Remove limit, lookup, unwind, project to just get count
+        totalPipeline.push({ $count: "total" });
+        const totalResult = await Listing.aggregate(totalPipeline);
+        total = totalResult.length > 0 ? totalResult[0].total : 0;
+    } else {
+        // If not searching, standard count is much faster
+        total = await Listing.countDocuments(matchStage);
+    }
+
+    res.status(200).json({
+        listings,
+        pagination: {
+            total,
+            page: Number(page),
+            limit: Number(limit),
+            hasMore: listings.length === Number(limit),
+            nextCursor: listings.length > 0 ? listings[listings.length - 1]._id : null,
+        },
+    });
+});
+
+const getSuggestedListings = wrapAsync(async (req, res) => {
+    const { year, department, _id } = req.user;
+
+    const suggested = await Listing.find({
+        status: "Listed",
+        seller: { $ne: _id },
+        $or: [{ sellerYear: year }, { sellerDepartment: department }],
+    })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .populate("seller", "name username year department");
+
+    res.status(200).json({ listings: suggested });
+});
+
+const getListingById = wrapAsync(async (req, res) => {
         const listing = await Listing.findById(req.params.id)
             .populate("seller", "name username email contactInfo isContactDisplayable year department")
             .populate("comments.user", "name username");
@@ -187,15 +185,11 @@ const getListingById = async (req, res) => {
         }
 
         res.status(200).json({ listing });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
+});
 
 // Update
 
-const updateListing = async (req, res) => {
-    try {
+const updateListing = wrapAsync(async (req, res) => {
         const { title, description, price, category, count, location } = req.body;
 
         // findOneAndUpdate with seller check 
@@ -216,16 +210,12 @@ const updateListing = async (req, res) => {
         }
 
         res.status(200).json({ message: "Listing updated", listing });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
+});
 
 
 // Delete
 
-const deleteListing = async (req, res) => {
-    try {
+const deleteListing = wrapAsync(async (req, res) => {
         const listing = await Listing.findOne({
             _id: req.params.id, // Similar authentication logic to check if the correct user is sending request or not
             seller: req.user._id,
@@ -255,15 +245,11 @@ const deleteListing = async (req, res) => {
         );
 
         res.status(200).json({ message: "Listing deleted successfully" });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
+});
 
 // Update Listing Status
 
-const updateListingStatus = async (req, res) => {
-    try {
+const updateListingStatus = wrapAsync(async (req, res) => {
         const { status } = req.body; // Capture the status user wants to update to
 
         const validStatuses = ["Listed", "Sold"];
@@ -287,9 +273,6 @@ const updateListingStatus = async (req, res) => {
         }
 
         res.status(200).json({ message: `Listing marked as ${status}`, listing });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
+});
 
 module.exports={ createListing, getListings, getSuggestedListings, updateListing, deleteListing, getListingById, updateListingStatus };

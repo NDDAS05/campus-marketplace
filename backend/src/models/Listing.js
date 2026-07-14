@@ -43,6 +43,10 @@ const listingSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    sellerName: {
+      type: String,
+      required: true,
+    },
     sellerYear: {
       type: String,
     },
@@ -67,7 +71,7 @@ const listingSchema = new mongoose.Schema(
     ],
     location: {
       type: String,
-      default: "Shibpur,Howrah",
+      default: "Shibpur, Howrah",
     },
     status: {
       type: String,
