@@ -43,6 +43,10 @@ const listingSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    sellerName: {
+      type: String,
+      required: true,
+    },
     sellerYear: {
       type: String,
     },

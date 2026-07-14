@@ -3,6 +3,8 @@ const { User } = require("../models/User");
 const cloudinary = require("../utils/cloudinary");
 const { upload, uploadToCloudinary } = require("../middleware/upload.middleware");
 const wrapAsync = require("../utils/wrapAsync");
+const mongoose = require("mongoose");
+
 
 // 1. Extracting public ID from the image URL
 //https://res.cloudinary.com/demo/image/upload/v12345678/listings/electronics/phone.jpg
@@ -47,6 +49,7 @@ const createListing = wrapAsync(async (req, res)=>{
             category,
             seller: req.user._id,
             sellerYear: req.user.year,
+            sellerName: req.user.username,
             sellerDepartment: req.user.department,
             title,
             description,
@@ -70,89 +73,106 @@ const createListing = wrapAsync(async (req, res)=>{
 
 // Get listings route
 const getListings = wrapAsync(async (req, res) => {
-        const{
-            category,
-            status,
-            search,
-            page=1,
-            limit=10,
-            after, // Pagination: after is the last listing's ID from the previous page. We will fetch listings after this ID.
-            // Since sorted in descending order, we will fetch listings with ID less than this ID i.e. posted before this listing.
-        } = req.query;
+    const { category, status, search, page = 1, limit = 10, after } = req.query;
+    
+    const pipeline = [];
 
-        const filter = {};
-
-        filter.status = status || "Listed"; // Default to "Listed" if not provided
-        if(category){
-            filter.category = category;
-        }
-
-        if (search) {
-            filter.$or = [
-                { title: { $regex: search, $options: "i" } },
-                { description: { $regex: search, $options: "i" } },
-            ];
-        }
-        // Cursor-based pagination
-        if (after) {
-            filter._id = { $lt: after };
-        }
-
-        const listings = await Listing.find(filter)
-            .sort({ _id: -1 })           // newest first DESC sorting
-            .limit(Number(limit))
-            .populate("seller", "name username year department");
-            // mongoose populate() method is used to replace the specified field in the document with the document from another collection. In this case, we are populating the "seller" field of the Listing model with the "name", "username", "year", and "department" fields from the User model.
-
-            /*1. The First Parameter ("seller")
-            This tells Mongoose which path in your current schema to look at. It tells the server: "Find the seller field inside the Listing document, grab the ID hidden inside it, and check which model it references."
-
-            2. The Second Parameter ("name username year department")
-            This is called Field Selection. By default, if you just wrote .populate("seller"), Mongoose would dump everything it knows about that user into the response—including sensitive info like their hashed password, email, or account creation dates.
-
-            By passing this space-separated string, you are setting strict boundaries. You are saying: "Only bring back the seller's name, username, year, and department. Leave everything else behind in the database for security."
-
-            The Final Result
-            Once .populate() finishes its job, the data sent back to your frontend turns into a neat, nested object.
-            */
-
-
-        const total = await Listing.countDocuments(filter);
-
-        res.status(200).json({
-            listings,
-            pagination: {
-                total,
-                page: Number(page),
-                limit: Number(limit),
-                hasMore: listings.length === Number(limit),
-                // A boolean indicating if there might be more data left to fetch (true if the server returned a full page of items).
-                nextCursor: listings.length > 0 ? listings[listings.length - 1]._id : null,
-                // Determines the cursor for the next request. If listings were found, it grabs the ID of the very last item in the array. If the array is empty, it sets it to null.
-                // Used for infinite scrolling. Frontend saves this. When user reaches end of the page, frontend makes
-                // api call with THIS nextCusror as the "after" parameter of the URL/query.
-                // Thus the next call displays listings after this listing, i.e. older listings.
-            },
+    // 1. Atlas Search MUST be the very first stage in the pipeline
+    if (search) {
+        pipeline.unshift({
+            $search: {
+                index: "default", 
+                compound: {
+                    should: [
+                        { text: { query: search, path: "category", score: { boost: { value: 5 } } } },
+                        { text: { query: search, path: "title", score: { boost: { value: 3 } } } },
+                        { text: { query: search, path: "sellerDepartment", score: { boost: { value: 2 } } } },
+                        { text: { query: search, path: "description", score: { boost: { value: 1 } } } },
+                        { text: { query: search, path: "sellerName", score: { boost: { value: 1 } } } }
+                    ]
+                }
+            }
         });
+    }
+
+    // 2. Standard Filters
+    const matchStage = { status: status || "Listed" };
+    if (category) matchStage.category = category;
+    if (after) matchStage._id = { $lt: new mongoose.Types.ObjectId(after) };
+
+    pipeline.push({ $match: matchStage });
+
+    // 3. Sorting & Pagination
+    // If searching, Atlas Search already sorts by relevance score automatically! 
+    // We only sort by _id (newest) if we are NOT doing a text search.
+    if (!search) {
+        pipeline.push({ $sort: { _id: -1 } });
+    }
+    pipeline.push({ $limit: Number(limit) });
+
+    // 4. Populate Seller Info (Using Aggregation $lookup)
+    pipeline.push({
+        $lookup: {
+            from: "users", // MongoDB collections are lowercase and plural
+            localField: "seller",
+            foreignField: "_id",
+            as: "seller"
+        }
+    });
+    pipeline.push({ $unwind: "$seller" });
+    
+    // Hide sensitive seller info in the search feed
+    pipeline.push({
+        $project: {
+            "seller.password": 0,
+            "seller.wishlist": 0,
+            "seller.myListings": 0,
+            "seller.email": 0,
+            "seller.contactInfo": 0
+        }
+    });
+
+    const listings = await Listing.aggregate(pipeline);
+
+    // Get total count (for pagination)
+    let total = 0;
+    if (search) {
+        // If searching, we count the aggregation results
+        const totalPipeline = [...pipeline];
+        totalPipeline.splice(-4); // Remove limit, lookup, unwind, project to just get count
+        totalPipeline.push({ $count: "total" });
+        const totalResult = await Listing.aggregate(totalPipeline);
+        total = totalResult.length > 0 ? totalResult[0].total : 0;
+    } else {
+        // If not searching, standard count is much faster
+        total = await Listing.countDocuments(matchStage);
+    }
+
+    res.status(200).json({
+        listings,
+        pagination: {
+            total,
+            page: Number(page),
+            limit: Number(limit),
+            hasMore: listings.length === Number(limit),
+            nextCursor: listings.length > 0 ? listings[listings.length - 1]._id : null,
+        },
+    });
 });
 
-// Get suggested listings based on user's year and department
-const getSuggestedListings = wrapAsync( async (req, res) => {
-        const { year, department, _id } = req.user;
+const getSuggestedListings = wrapAsync(async (req, res) => {
+    const { year, department, _id } = req.user;
 
-        const suggested = await Listing.find({
-            status: "Listed",
-            seller: { $ne: _id },         // don't show user's own listings
-            $or: [
-                { sellerYear: year },
-                { sellerDepartment: department },
-            ],
-        })
-            .sort({ createdAt: -1 })
-            .limit(10)
-            .populate("seller", "name username year department");
+    const suggested = await Listing.find({
+        status: "Listed",
+        seller: { $ne: _id },
+        $or: [{ sellerYear: year }, { sellerDepartment: department }],
+    })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .populate("seller", "name username year department");
 
-        res.status(200).json({ listings: suggested });
+    res.status(200).json({ listings: suggested });
 });
 
 const getListingById = wrapAsync(async (req, res) => {
