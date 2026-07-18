@@ -2,6 +2,69 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { User } = require("../models/User.js");
 const wrapAsync = require("../utils/wrapAsync");
+const { OAuth2Client } = require("google-auth-library");
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+exports.googleLogin = wrapAsync(async (req, res) => {
+  const { credential } = req.body;
+
+  const ticket = await googleClient.verifyIdToken({
+    idToken: credential,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+  const payload = ticket.getPayload();
+  const { email, name, sub: googleId, email_verified } = payload;
+
+  if (!email_verified) {
+    return res.status(400).json({ message: "Google email not verified" });
+  }
+
+  // Same domain restriction as regular signup
+  const allowedDomain = "students.iiests.ac.in";
+  if (!email.endsWith(`@${allowedDomain}`)) {
+    return res.status(400).json({ message: "Only IIEST Shibpur student emails are allowed" });
+  }
+
+  let user = await User.findOne({ $or: [{ googleId }, { email }] });
+
+  if (user) {
+    // Email already registered the normal way — don't silently merge accounts
+    if (user.authProvider !== "google") {
+      return res.status(400).json({
+        message: "An account with this email already exists. Please log in with your password instead.",
+      });
+    }
+  } else {
+    // First time — create the account. Derive a unique username from the email.
+    const base = email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "").slice(0, 20) || "user";
+    let username = base;
+    let suffix = 0;
+    while (await User.findOne({ username })) {
+      suffix += 1;
+      username = `${base}${suffix}`;
+    }
+
+    user = await User.create({
+      name,
+      username,
+      email,
+      googleId,
+      authProvider: "google",
+    });
+  }
+
+  const token = signToken(user._id);
+  sendTokenCookie(res, token);
+
+  res.status(200).json({
+    user: {
+      id: user._id,
+      name: user.name,
+      username: user.username,
+      email: user.email,
+    },
+  });
+});
 
 
 const signToken = (userId) => {

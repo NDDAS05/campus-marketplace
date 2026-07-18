@@ -83,6 +83,10 @@ export const authApi = {
   login: (payload) =>
     request(`/api/auth/login`, { method: "POST", body: JSON.stringify(payload) }),
 
+  // payload: { credential } — the Google ID token from the Sign-In button
+  googleLogin: (payload) =>
+    request(`/api/auth/google`, { method: "POST", body: JSON.stringify(payload) }),
+
   // Reads the httpOnly cookie server-side; throws (401) if not logged in.
   getMe: () => request(`/api/auth/me`),
 

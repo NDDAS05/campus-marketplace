@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { authApi } from "../utils/api";
 import { getAcademicYear, getValidSemesters } from "../utils/academicYear";
 
@@ -24,6 +24,8 @@ const AuthPage = ({ mode = "login", onAuthSuccess, navigate, message }) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  const googleBtnRef = useRef(null);
 
   // Recomputed on every keystroke to email/stream — cheap, no need to memoize.
   const detectedYear = isSignup ? getAcademicYear(form.email, form.stream) : "";
@@ -76,6 +78,37 @@ const AuthPage = ({ mode = "login", onAuthSuccess, navigate, message }) => {
     }
   };
 
+  // Google Sign-In: renders Google's own button into googleBtnRef and
+  // wires its callback to hit our /api/auth/google endpoint, same
+  // onAuthSuccess path as the normal form submit.
+  useEffect(() => {
+    if (!window.google || !googleBtnRef.current) return;
+
+    window.google.accounts.id.initialize({
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      callback: async (response) => {
+        setError(null);
+        setIsSubmitting(true);
+        try {
+          const data = await authApi.googleLogin({ credential: response.credential });
+          onAuthSuccess(data.user);
+        } catch (err) {
+          setError(err.message || "Google sign-in failed. Please try again.");
+        } finally {
+          setIsSubmitting(false);
+        }
+      },
+    });
+
+    window.google.accounts.id.renderButton(googleBtnRef.current, {
+      theme: "outline",
+      size: "large",
+      width: "100%",
+      text: isSignup ? "signup_with" : "signin_with",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignup]);
+
   const yearHint = () => {
     if (!isSignup || !form.stream) return null;
     if (form.stream === "PHD") {
@@ -112,6 +145,14 @@ const AuthPage = ({ mode = "login", onAuthSuccess, navigate, message }) => {
             {error}
           </div>
         )}
+
+        {/* Google Sign-In button renders here */}
+        <div ref={googleBtnRef} className="mb-4 flex justify-center"></div>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+          <span className="text-xs text-gray-400 dark:text-gray-500">or</span>
+          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+        </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           {isSignup && (

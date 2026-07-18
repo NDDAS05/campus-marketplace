@@ -24,4 +24,8 @@ const loginSchema = Joi.object({
     password:Joi.string().required(),
 });
 
-module.exports = {registerSchema,loginSchema};
+const googleAuthSchema = Joi.object({
+    credential: Joi.string().required(),
+});
+
+module.exports = { registerSchema, loginSchema, googleAuthSchema };
