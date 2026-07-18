@@ -76,3 +76,25 @@ exports.getUserById = wrapAsync(async (req, res) => {
 
     res.status(200).json(publicProfile);
 });
+
+// user.controller.js — update getProfile to also populate wishlist
+exports.getProfile = wrapAsync(async (req, res) => {
+    const user = await User.findById(req.user._id)
+        .select("-password")
+        .populate("myListings")
+        .populate("wishlist"); // <-- added
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json(user.toObject());
+});
+
+// user.controller.js — new exports
+exports.addToWishlist = wrapAsync(async (req, res) => {
+    await User.findByIdAndUpdate(req.user._id, { $addToSet: { wishlist: req.params.listingId } });
+    res.status(200).json({ message: "Added to wishlist" });
+});
+
+exports.removeFromWishlist = wrapAsync(async (req, res) => {
+    await User.findByIdAndUpdate(req.user._id, { $pull: { wishlist: req.params.listingId } });
+    res.status(200).json({ message: "Removed from wishlist" });
+});

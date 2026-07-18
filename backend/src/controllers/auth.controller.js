@@ -94,6 +94,22 @@ exports.login = wrapAsync( async (req, res, next) => {
     });
 });
 
-exports.getMe = wrapAsync(async (req,res,next) => {
-    res.status(200).json({user:req.user});
+
+exports.getMe = wrapAsync(async (req, res, next) => {
+  res.status(200).json({
+    user: {
+      id: req.user._id,
+      name: req.user.name,
+      username: req.user.username,
+      email: req.user.email,
+    },
+  });
 });
+exports.logout = (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  });
+  res.status(200).json({ message: "Logged out successfully" });
+};
