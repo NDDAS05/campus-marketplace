@@ -16,6 +16,16 @@ export default function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [currentPath, setCurrentPath] = useState('/');
 
+  // Theme state — persisted in localStorage, falls back to 'light'.
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+
   const isLoggedIn = !!user;
 
   // On first load, ask the backend if the httpOnly cookie is still valid.
@@ -90,19 +100,21 @@ export default function App() {
   // we're still checking the cookie on first load.
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-gray-300 border-t-black rounded-full animate-spin" />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-gray-300 dark:border-gray-700 border-t-black dark:border-t-white rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col font-sans text-gray-900 dark:text-gray-100">
       <Navbar
         isLoggedIn={isLoggedIn}
         onLogin={() => setCurrentPath('/login')}
         onLogout={handleLogout}
         navigate={setCurrentPath}
+        theme={theme}
+        toggleTheme={toggleTheme}
       />
 
       {/* Main content wrapper */}

@@ -51,7 +51,8 @@ const ListingCard = ({ listing, onDelete, isRemoving, navigate }) => {
 
   return (
     <div
-      className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-lg transition-all duration-300 group
+      onClick={()=> navigate(`/listing/${listing._id}`)}
+      className={`bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col hover:shadow-lg dark:hover:shadow-black/40 transition-all duration-300 cursor-pointer group
         ${isMounted && !removingForAnimation ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
         ${removingForAnimation ? '!opacity-0 !scale-90' : ''}
       `}
@@ -60,7 +61,7 @@ const ListingCard = ({ listing, onDelete, isRemoving, navigate }) => {
 
       {/* 1. Image Section — sliding track */}
       <div
-        className="relative h-56 w-full bg-gray-100 overflow-hidden cursor-pointer"
+        className="relative h-56 w-full bg-gray-100 dark:bg-gray-800 overflow-hidden cursor-pointer"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -78,7 +79,7 @@ const ListingCard = ({ listing, onDelete, isRemoving, navigate }) => {
           ))}
         </div>
 
-        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-gray-800 shadow-sm">
+        <div className="absolute top-3 left-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-gray-800 dark:text-gray-100 shadow-sm">
           {listing.category}
         </div>
 
@@ -93,9 +94,9 @@ const ListingCard = ({ listing, onDelete, isRemoving, navigate }) => {
         )}
 
         <button
-          onClick={handleDeleteClick}
+          onClick={(e) => { e.stopPropagation(); handleDeleteClick(e); }}
           disabled={isDeleting}
-          className={`absolute bottom-3 right-3 p-1.5 bg-white/90 hover:bg-red-500 hover:text-white rounded-full text-gray-700 shadow-md transition-all duration-200 disabled:opacity-50 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute bottom-3 right-3 p-1.5 bg-white/90 dark:bg-gray-900/90 hover:bg-red-500 hover:text-white rounded-full text-gray-700 dark:text-gray-200 shadow-md transition-all duration-200 disabled:opacity-50 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
           title="Remove listing"
         >
           {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
@@ -103,10 +104,10 @@ const ListingCard = ({ listing, onDelete, isRemoving, navigate }) => {
 
         {listing.images.length > 1 && (
           <div className={`absolute inset-0 flex items-center justify-between px-2 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-            <button onClick={prevImage} className="p-1.5 bg-white/80 hover:bg-white rounded-full text-gray-800 shadow-md transition-colors">
+            <button onClick={prevImage} className="p-1.5 bg-white/80 dark:bg-gray-900/80 hover:bg-white dark:hover:bg-gray-900 rounded-full text-gray-800 dark:text-gray-100 shadow-md transition-colors">
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <button onClick={nextImage} className="p-1.5 bg-white/80 hover:bg-white rounded-full text-gray-800 shadow-md transition-colors">
+            <button onClick={nextImage} className="p-1.5 bg-white/80 dark:bg-gray-900/80 hover:bg-white dark:hover:bg-gray-900 rounded-full text-gray-800 dark:text-gray-100 shadow-md transition-colors">
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
@@ -126,27 +127,27 @@ const ListingCard = ({ listing, onDelete, isRemoving, navigate }) => {
 
       {/* 2. Content Section */}
       <div className="p-5 flex flex-col flex-grow">
-        <h2 className="text-lg font-bold text-gray-900 line-clamp-1 mb-1" title={listing.title}>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 line-clamp-1 mb-1" title={listing.title}>
           {listing.title}
         </h2>
 
-        <p className="text-sm text-gray-500 line-clamp-2 mb-4 flex-grow">
+        <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-4 flex-grow">
           {listing.description}
         </p>
 
         <div className="flex items-end justify-between mb-4">
-          <div className="flex items-center text-gray-400 text-xs font-medium">
+          <div className="flex items-center text-gray-400 dark:text-gray-500 text-xs font-medium">
             <MapPin className="w-3.5 h-3.5 mr-1" />
             {listing.location}
           </div>
-          <div className="text-xl font-bold text-gray-900">
+          <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
             ₹{listing.price}
           </div>
         </div>
 
         <button
           onClick={() => navigate(`/listing/${listing._id}`)}
-          className="w-full py-2.5 bg-black text-white rounded-lg font-medium text-sm hover:bg-gray-800 transition-colors"
+          className="w-full py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-lg font-medium text-sm hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
         >
           View Item
         </button>
@@ -224,14 +225,14 @@ const HomePage = ({ navigate }) => {
     <div className="flex w-full relative">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <div className="flex-1 p-4 sm:p-8 bg-gray-50 w-full min-h-screen">
+      <div className="flex-1 p-4 sm:p-8 bg-gray-50 dark:bg-gray-950 w-full min-h-screen">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Marketplace Feed</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Marketplace Feed</h1>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="lg:hidden flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-lg font-medium text-sm hover:bg-gray-50 shadow-sm"
+              className="lg:hidden flex items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-800 shadow-sm"
             >
               <Filter className="w-4 h-4" /> Filters
             </button>
@@ -239,21 +240,21 @@ const HomePage = ({ navigate }) => {
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-24 text-gray-400">
+          <div className="flex justify-center py-24 text-gray-400 dark:text-gray-500">
             <Loader2 className="w-6 h-6 animate-spin" />
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center py-24 text-red-500 text-sm gap-3">
+          <div className="flex flex-col items-center justify-center py-24 text-red-500 dark:text-red-400 text-sm gap-3">
             <p>{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 text-sm hover:bg-gray-50"
+              className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-gray-700 dark:text-gray-200 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
             >
               Retry
             </button>
           </div>
         ) : listings.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+          <div className="flex flex-col items-center justify-center py-24 text-gray-400 dark:text-gray-500">
             <p className="text-sm">No listings yet. Add one to get started.</p>
           </div>
         ) : (
@@ -275,7 +276,7 @@ const HomePage = ({ navigate }) => {
                 <button
                   onClick={handleLoadMore}
                   disabled={isLoadingMore}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-lg font-medium text-sm text-gray-700 hover:bg-gray-50 shadow-sm disabled:opacity-50"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg font-medium text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 shadow-sm disabled:opacity-50"
                 >
                   {isLoadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
                   Load More

@@ -91,24 +91,24 @@ const AuthPage = ({ mode = "login", onAuthSuccess, navigate, message }) => {
   };
 
   return (
-    <div className="flex-1 flex justify-center items-center bg-gray-50 p-8">
-      <div className="bg-white p-10 rounded-2xl shadow-sm border border-gray-100 w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-2 text-center text-gray-900">
+    <div className="flex-1 flex justify-center items-center bg-gray-50 dark:bg-gray-950 p-8">
+      <div className="bg-white dark:bg-gray-900 p-10 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 w-full max-w-md">
+        <h1 className="text-2xl font-bold mb-2 text-center text-gray-900 dark:text-gray-100">
           {isSignup ? "Create Account" : "Welcome Back"}
         </h1>
 
         {message && (
-          <p className="text-sm text-gray-500 text-center mb-4">{message}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">{message}</p>
         )}
 
         {!isSignup && (
-          <p className="text-xs text-gray-400 text-center mb-6">
+          <p className="text-xs text-gray-400 dark:text-gray-500 text-center mb-6">
             Use your @students.iiests.ac.in email
           </p>
         )}
 
         {error && (
-          <div className="mb-4 px-4 py-2.5 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg">
+          <div className="mb-4 px-4 py-2.5 bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900 text-red-600 dark:text-red-400 text-sm rounded-lg">
             {error}
           </div>
         )}
@@ -122,7 +122,7 @@ const AuthPage = ({ mode = "login", onAuthSuccess, navigate, message }) => {
                 value={form.name}
                 onChange={handleChange("name")}
                 required
-                className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black outline-none"
+                className="w-full bg-gray-100 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none"
               />
               <input
                 type="text"
@@ -131,7 +131,7 @@ const AuthPage = ({ mode = "login", onAuthSuccess, navigate, message }) => {
                 onChange={handleChange("username")}
                 required
                 minLength={5}
-                className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black outline-none"
+                className="w-full bg-gray-100 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none"
               />
             </>
           )}
@@ -142,7 +142,7 @@ const AuthPage = ({ mode = "login", onAuthSuccess, navigate, message }) => {
             value={form.email}
             onChange={handleChange("email")}
             required
-            className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black outline-none"
+            className="w-full bg-gray-100 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none"
           />
 
           <input
@@ -152,7 +152,7 @@ const AuthPage = ({ mode = "login", onAuthSuccess, navigate, message }) => {
             onChange={handleChange("password")}
             required
             minLength={6}
-            className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black outline-none"
+            className="w-full bg-gray-100 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none"
           />
 
           {isSignup && (
@@ -161,7 +161,7 @@ const AuthPage = ({ mode = "login", onAuthSuccess, navigate, message }) => {
                 <select
                   value={form.stream}
                   onChange={handleChange("stream")}
-                  className="w-1/2 bg-gray-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black outline-none text-gray-700"
+                  className="w-1/2 bg-gray-100 dark:bg-gray-800 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none text-gray-700 dark:text-gray-200"
                 >
                   <option value="">Branch</option>
                   {STREAM_OPTIONS.map((s) => (
@@ -172,7 +172,7 @@ const AuthPage = ({ mode = "login", onAuthSuccess, navigate, message }) => {
                 <select
                   value={form.department}
                   onChange={handleChange("department")}
-                  className="w-1/2 bg-gray-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black outline-none text-gray-700"
+                  className="w-1/2 bg-gray-100 dark:bg-gray-800 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none text-gray-700 dark:text-gray-200"
                 >
                   <option value="">Dept (optional)</option>
                   {DEPARTMENT_OPTIONS.map((d) => (
@@ -182,13 +182,13 @@ const AuthPage = ({ mode = "login", onAuthSuccess, navigate, message }) => {
               </div>
 
               {yearHint() && (
-                <p className="text-xs text-gray-400 -mt-1 px-1">{yearHint()}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 -mt-1 px-1">{yearHint()}</p>
               )}
 
               <select
                 value={form.semester}
                 onChange={handleChange("semester")}
-                className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black outline-none text-gray-700"
+                className="w-full bg-gray-100 dark:bg-gray-800 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none text-gray-700 dark:text-gray-200"
               >
                 <option value="">Semester (optional)</option>
                 {(validSemesters || SEMESTER_OPTIONS).map((s) => (
@@ -201,22 +201,22 @@ const AuthPage = ({ mode = "login", onAuthSuccess, navigate, message }) => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="h-12 bg-black text-white rounded-full w-full font-medium mt-2 hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="h-12 bg-black dark:bg-white text-white dark:text-black rounded-full w-full font-medium mt-2 hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-50"
           >
             {isSubmitting ? "Please wait..." : isSignup ? "Sign Up" : "Log In"}
           </button>
         </form>
 
-        <p className="text-sm text-gray-500 text-center mt-6">
+        <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-6">
           {isSignup ? (
             <>Already have an account?{" "}
-              <button onClick={() => navigate("/login")} className="text-black font-medium underline">
+              <button onClick={() => navigate("/login")} className="text-black dark:text-white font-medium underline">
                 Log in
               </button>
             </>
           ) : (
             <>New here?{" "}
-              <button onClick={() => navigate("/signup")} className="text-black font-medium underline">
+              <button onClick={() => navigate("/signup")} className="text-black dark:text-white font-medium underline">
                 Sign up
               </button>
             </>

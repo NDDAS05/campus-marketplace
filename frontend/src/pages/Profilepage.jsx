@@ -35,8 +35,8 @@ const OwnedListingCard = ({ listing, onToggleStatus, onDelete }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-      <div className="relative h-40 w-full bg-gray-100">
+    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col">
+      <div className="relative h-40 w-full bg-gray-100 dark:bg-gray-800">
         <img
           src={listing.images?.[0]}
           alt={listing.title}
@@ -48,16 +48,16 @@ const OwnedListingCard = ({ listing, onToggleStatus, onDelete }) => {
       </div>
 
       <div className="p-4 flex flex-col flex-grow">
-        <h3 className="font-semibold text-gray-900 line-clamp-1 mb-1" title={listing.title}>
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-1 mb-1" title={listing.title}>
           {listing.title}
         </h3>
-        <div className="text-lg font-bold text-gray-900 mb-3">₹{listing.price}</div>
+        <div className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">₹{listing.price}</div>
 
         <div className="flex gap-2 mt-auto">
           <button
             onClick={handleToggleStatus}
             disabled={isUpdatingStatus}
-            className="flex-1 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 flex items-center justify-center gap-1.5"
+            className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 flex items-center justify-center gap-1.5"
           >
             {isUpdatingStatus && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             Mark as {listing.status === "Sold" ? "Listed" : "Sold"}
@@ -65,7 +65,7 @@ const OwnedListingCard = ({ listing, onToggleStatus, onDelete }) => {
           <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+            className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-50"
             title="Delete listing"
           >
             {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
@@ -91,23 +91,23 @@ const WishlistCard = ({ listing, onRemove }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-      <div className="relative h-40 w-full bg-gray-100">
+    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col">
+      <div className="relative h-40 w-full bg-gray-100 dark:bg-gray-800">
         <img src={listing.images?.[0]} alt={listing.title} className="w-full h-full object-cover" />
         <button
           onClick={handleRemove}
           disabled={isRemoving}
-          className="absolute top-2.5 right-2.5 p-1.5 bg-white/90 hover:bg-red-500 hover:text-white rounded-full text-gray-700 shadow-sm disabled:opacity-50"
+          className="absolute top-2.5 right-2.5 p-1.5 bg-white/90 dark:bg-gray-900/90 hover:bg-red-500 hover:text-white rounded-full text-gray-700 dark:text-gray-200 shadow-sm disabled:opacity-50"
           title="Remove from wishlist"
         >
           {isRemoving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
         </button>
       </div>
       <div className="p-4">
-        <h3 className="font-semibold text-gray-900 line-clamp-1 mb-1" title={listing.title}>
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-1 mb-1" title={listing.title}>
           {listing.title}
         </h3>
-        <div className="text-lg font-bold text-gray-900">₹{listing.price}</div>
+        <div className="text-lg font-bold text-gray-900 dark:text-gray-100">₹{listing.price}</div>
       </div>
     </div>
   );
@@ -223,18 +223,18 @@ const ProfilePage = ({ onLogout }) => {
   if (isLoading) {
     return (
       <div className="flex-1 flex justify-center items-center py-24">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        <Loader2 className="w-6 h-6 animate-spin text-gray-400 dark:text-gray-500" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center py-24 text-red-500 text-sm gap-3">
+      <div className="flex-1 flex flex-col items-center justify-center py-24 text-red-500 dark:text-red-400 text-sm gap-3">
         <p>{error}</p>
         <button
           onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 text-sm hover:bg-gray-50"
+          className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-gray-700 dark:text-gray-200 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
         >
           Retry
         </button>
@@ -247,40 +247,40 @@ const ProfilePage = ({ onLogout }) => {
     : null;
 
   return (
-    <div className="flex-1 p-4 sm:p-8 bg-gray-50 w-full min-h-screen">
+    <div className="flex-1 p-4 sm:p-8 bg-gray-50 dark:bg-gray-950 w-full min-h-screen">
       <div className="max-w-4xl mx-auto flex flex-col gap-8">
 
         {/* --- Header --- */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between gap-5">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 flex items-center justify-between gap-5">
           <div className="flex items-center gap-5">
-            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-xl font-bold text-gray-600 flex-shrink-0">
+            <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xl font-bold text-gray-600 dark:text-gray-200 flex-shrink-0">
               {profile.name?.[0]?.toUpperCase() || "?"}
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-xl font-bold text-gray-900">{profile.name}</h1>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{profile.name}</h1>
                 {onLogout && (
                   <button
                     onClick={onLogout}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 text-xs font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400 hover:border-red-100 dark:hover:border-red-900 transition-colors"
                   >
                     <LogOut className="w-3.5 h-3.5" /> Logout
                   </button>
                 )}
               </div>
-              <p className="text-sm text-gray-500">@{profile.username}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">@{profile.username}</p>
               <div className="flex flex-wrap gap-2 mt-2">
                 {profile.department && (
-                  <span className="text-xs font-medium bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">{profile.department}</span>
+                  <span className="text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2.5 py-1 rounded-full">{profile.department}</span>
                 )}
                 {profile.year && (
-                  <span className="text-xs font-medium bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">{profile.year}</span>
+                  <span className="text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2.5 py-1 rounded-full">{profile.year}</span>
                 )}
                 {profile.stream && (
-                  <span className="text-xs font-medium bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">{profile.stream}</span>
+                  <span className="text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2.5 py-1 rounded-full">{profile.stream}</span>
                 )}
                 {memberSince && (
-                  <span className="text-xs text-gray-400 px-1 py-1">Member since {memberSince}</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 px-1 py-1">Member since {memberSince}</span>
                 )}
               </div>
             </div>
@@ -288,11 +288,11 @@ const ProfilePage = ({ onLogout }) => {
         </div>
 
         {/* --- Personal details --- */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Personal Details</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Personal Details</h2>
             {!isEditing && (
-              <button onClick={openEditForm} className="p-2 rounded-full hover:bg-gray-100 text-gray-500" title="Edit details">
+              <button onClick={openEditForm} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400" title="Edit details">
                 <Pencil className="w-4 h-4" />
               </button>
             )}
@@ -300,18 +300,18 @@ const ProfilePage = ({ onLogout }) => {
 
           {!isEditing ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-              <div><span className="text-gray-400">Email</span><p className="text-gray-900">{profile.email}</p></div>
-              <div><span className="text-gray-400">Semester</span><p className="text-gray-900">{profile.semester || "—"}</p></div>
-              <div><span className="text-gray-400">Contact Info</span><p className="text-gray-900">{profile.contactInfo || "Not set"}</p></div>
-              <div><span className="text-gray-400">Visible to buyers</span><p className="text-gray-900">{profile.isContactDisplayable ? "Yes" : "No"}</p></div>
+              <div><span className="text-gray-400 dark:text-gray-500">Email</span><p className="text-gray-900 dark:text-gray-100">{profile.email}</p></div>
+              <div><span className="text-gray-400 dark:text-gray-500">Semester</span><p className="text-gray-900 dark:text-gray-100">{profile.semester || "—"}</p></div>
+              <div><span className="text-gray-400 dark:text-gray-500">Contact Info</span><p className="text-gray-900 dark:text-gray-100">{profile.contactInfo || "Not set"}</p></div>
+              <div><span className="text-gray-400 dark:text-gray-500">Visible to buyers</span><p className="text-gray-900 dark:text-gray-100">{profile.isContactDisplayable ? "Yes" : "No"}</p></div>
             </div>
           ) : (
             <form onSubmit={handleSaveProfile} className="flex flex-col gap-3">
               {saveError && (
-                <div className="px-4 py-2.5 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg">{saveError}</div>
+                <div className="px-4 py-2.5 bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900 text-red-600 dark:text-red-400 text-sm rounded-lg">{saveError}</div>
               )}
               {saveNotice && (
-                <div className="px-4 py-2.5 bg-amber-50 border border-amber-100 text-amber-700 text-sm rounded-lg">{saveNotice}</div>
+                <div className="px-4 py-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900 text-amber-700 dark:text-amber-400 text-sm rounded-lg">{saveNotice}</div>
               )}
 
               <input
@@ -319,23 +319,23 @@ const ProfilePage = ({ onLogout }) => {
                 value={editForm.name}
                 onChange={handleEditChange("name")}
                 placeholder="Full name"
-                className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black outline-none"
+                className="w-full bg-gray-100 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none"
               />
 
               <div className="grid grid-cols-2 gap-3">
-                <select value={editForm.department} onChange={handleEditChange("department")} className="bg-gray-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black outline-none text-gray-700">
+                <select value={editForm.department} onChange={handleEditChange("department")} className="bg-gray-100 dark:bg-gray-800 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none text-gray-700 dark:text-gray-200">
                   <option value="">Department</option>
                   {DEPARTMENT_OPTIONS.map((d) => <option key={d} value={d}>{d}</option>)}
                 </select>
-                <select value={editForm.year} onChange={handleEditChange("year")} className="bg-gray-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black outline-none text-gray-700">
+                <select value={editForm.year} onChange={handleEditChange("year")} className="bg-gray-100 dark:bg-gray-800 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none text-gray-700 dark:text-gray-200">
                   <option value="">Year</option>
                   {YEAR_OPTIONS.map((y) => <option key={y} value={y}>{y}</option>)}
                 </select>
-                <select value={editForm.semester} onChange={handleEditChange("semester")} className="bg-gray-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black outline-none text-gray-700">
+                <select value={editForm.semester} onChange={handleEditChange("semester")} className="bg-gray-100 dark:bg-gray-800 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none text-gray-700 dark:text-gray-200">
                   <option value="">Semester</option>
                   {(getValidSemesters(editForm.year) || SEMESTER_OPTIONS).map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
-                <select value={editForm.stream} onChange={handleEditChange("stream")} className="bg-gray-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black outline-none text-gray-700">
+                <select value={editForm.stream} onChange={handleEditChange("stream")} className="bg-gray-100 dark:bg-gray-800 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none text-gray-700 dark:text-gray-200">
                   <option value="">Stream</option>
                   {STREAM_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -347,13 +347,13 @@ const ProfilePage = ({ onLogout }) => {
                 onChange={handleEditChange("contactInfo")}
                 placeholder="Contact info (phone/email — can only be set once)"
                 disabled={!!(profile.contactInfo && profile.contactInfo.trim() !== "")}
-                className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black outline-none disabled:opacity-60"
+                className="w-full bg-gray-100 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none disabled:opacity-60"
               />
               {profile.contactInfo && (
-                <p className="text-xs text-gray-400 -mt-2">Contact info is locked once set and can't be changed here.</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 -mt-2">Contact info is locked once set and can't be changed here.</p>
               )}
 
-              <label className="flex items-center gap-2 text-sm text-gray-700">
+              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
                 <input
                   type="checkbox"
                   checked={editForm.isContactDisplayable}
@@ -367,7 +367,7 @@ const ProfilePage = ({ onLogout }) => {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="flex-1 py-2.5 bg-black text-white rounded-lg font-medium text-sm hover:bg-gray-800 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-lg font-medium text-sm hover:bg-gray-800 dark:hover:bg-gray-200 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                   Save Changes
@@ -375,7 +375,7 @@ const ProfilePage = ({ onLogout }) => {
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="px-5 py-2.5 border border-gray-200 rounded-lg font-medium text-sm text-gray-700 hover:bg-gray-50"
+                  className="px-5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg font-medium text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                   Cancel
                 </button>
@@ -386,7 +386,7 @@ const ProfilePage = ({ onLogout }) => {
 
         {/* --- My Listings --- */}
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">My Listings</h2>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">My Listings</h2>
           {profile.myListings?.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {profile.myListings.map((listing) => (
@@ -399,7 +399,7 @@ const ProfilePage = ({ onLogout }) => {
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-xl border border-gray-100 p-10 text-center text-sm text-gray-400">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-10 text-center text-sm text-gray-400 dark:text-gray-500">
               You haven't posted anything yet.
             </div>
           )}
@@ -407,7 +407,7 @@ const ProfilePage = ({ onLogout }) => {
 
         {/* --- Wishlist --- */}
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
             <Heart className="w-4 h-4" /> Wishlist
           </h2>
           {profile.wishlist?.length > 0 ? (
@@ -417,7 +417,7 @@ const ProfilePage = ({ onLogout }) => {
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-xl border border-gray-100 p-10 text-center text-sm text-gray-400">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-10 text-center text-sm text-gray-400 dark:text-gray-500">
               Nothing saved yet.
             </div>
           )}
