@@ -56,4 +56,38 @@ const deleteComment = wrapAsync(async (req, res) => {
         res.status(200).json({ message: "Comment deleted successfully", listing });
 });
 
-module.exports = { addComment, deleteComment };
+// PATCH /api/listings/:id/comments/:commentId/dislike
+const toggleCommentDislike = wrapAsync(async (req, res) => {
+  const { id, commentId } = req.params;
+
+  const listing = await Listing.findById(id);
+  if (!listing) {
+    return res.status(404).json({ message: "Listing not found" });
+  }
+
+  const comment = listing.comments.id(commentId);
+  if (!comment) {
+    return res.status(404).json({ message: "Comment not found" });
+  }
+
+  // Can't dislike your own comment
+  if (comment.user.toString() === req.user._id.toString()) {
+    return res.status(403).json({ message: "You can't dislike your own comment" });
+  }
+
+  const userId = req.user._id.toString();
+  const alreadyDisliked = comment.dislikedBy.some((id) => id.toString() === userId);
+
+  if (alreadyDisliked) {
+    comment.dislikedBy = comment.dislikedBy.filter((id) => id.toString() !== userId);
+  } else {
+    comment.dislikedBy.push(req.user._id);
+  }
+
+  await listing.save();
+  await listing.populate("comments.user", "name username");
+
+  res.status(200).json({ message: "Dislike toggled", listing });
+});
+
+module.exports = { addComment, deleteComment, toggleCommentDislike };
