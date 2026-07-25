@@ -21,7 +21,10 @@ const sendTokenCookie = (res, token) => {
 };
 
 exports.register = wrapAsync(async (req, res, next) => {
-  const { name, username, email, password, college, year, semester, stream } = req.body;
+  // FIX: "department" was missing from this destructure even though the
+  // Joi schema validates it and the signup form collects it — it was being
+  // silently dropped on every registration.
+  const { name, username, email, password, college, department, year, semester, stream } = req.body;
 
   const existingUser = await User.findOne({ $or: [{ email }, { username }] });
   if (existingUser) {
@@ -43,6 +46,7 @@ exports.register = wrapAsync(async (req, res, next) => {
     email,
     password: hashedPassword,
     college,
+    department,
     year,
     semester,
     stream,

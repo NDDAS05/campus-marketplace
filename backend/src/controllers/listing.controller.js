@@ -20,6 +20,13 @@ const getPublicId = (imageUrl) => {
 const createListing = wrapAsync(async (req, res) => {
   const { title, description, price, category, count, location } = req.body;
 
+  // FIX: without this guard, submitting the form with zero images (multer
+  // then leaves req.files as an empty array/undefined) crashed on
+  // req.files.map(...) below with an opaque 500, instead of a clear 400.
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ message: "At least one image is required" });
+  }
+
   // Rate limit: max 5 NEW listings per user per rolling 24h
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const recentCount = await Listing.countDocuments({
@@ -65,7 +72,7 @@ const createListing = wrapAsync(async (req, res) => {
 
 // Get listings route
 const getListings = wrapAsync(async (req, res) => {
-  const { category, status, search, page = 1, limit = 10, after } = req.query;
+  const { category, status, search, page = 1, limit = 10, after, minPrice, maxPrice } = req.query;
 
   const pipeline = [];
 
@@ -86,8 +93,22 @@ const getListings = wrapAsync(async (req, res) => {
     });
   }
 
-  const matchStage = { status: status || "Listed" };
-  if (category) matchStage.category = category;
+  // Base filter — used for both the page query AND the total count.
+  // Deliberately does NOT include the `after` cursor: total should be the
+  // count for the filter as a whole, not "everything past this cursor".
+  const baseMatch = { status: status || "Listed" };
+  if (category) baseMatch.category = category;
+
+  // FIX: minPrice/maxPrice were sent by the frontend's Sidebar but never
+  // read here, so price filtering was silently a no-op.
+  if (minPrice || maxPrice) {
+    baseMatch.price = {};
+    if (minPrice) baseMatch.price.$gte = Number(minPrice);
+    if (maxPrice) baseMatch.price.$lte = Number(maxPrice);
+  }
+
+  // Page-scoped filter — same as baseMatch, plus the cursor.
+  const matchStage = { ...baseMatch };
   if (after) matchStage._id = { $lt: new mongoose.Types.ObjectId(after) };
 
   pipeline.push({ $match: matchStage });
@@ -119,15 +140,21 @@ const getListings = wrapAsync(async (req, res) => {
 
   const listings = await Listing.aggregate(pipeline);
 
+  // FIX: total was previously computed with `matchStage` (which includes
+  // the `_id: { $lt: after }` cursor filter), so it shrank on every
+  // "Load More" instead of reflecting the true total for the filter.
+  // Now uses baseMatch (no cursor) for both branches.
   let total = 0;
   if (search) {
-    const totalPipeline = [...pipeline];
-    totalPipeline.splice(-4);
-    totalPipeline.push({ $count: "total" });
+    const totalPipeline = [
+      pipeline[0], // $search
+      { $match: baseMatch },
+      { $count: "total" },
+    ];
     const totalResult = await Listing.aggregate(totalPipeline);
     total = totalResult.length > 0 ? totalResult[0].total : 0;
   } else {
-    total = await Listing.countDocuments(matchStage);
+    total = await Listing.countDocuments(baseMatch);
   }
 
   res.status(200).json({

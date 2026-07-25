@@ -158,7 +158,10 @@ const ListingCard = ({ listing, onDelete, isRemoving, navigate }) => {
 
 
 // --- MAIN PAGE COMPONENT ---
-const HomePage = ({ navigate }) => {
+// currentPath: passed down from App.jsx as "/marketplace" or
+// "/marketplace?search=...", so the Navbar's search box can drive this
+// page without a real router. We parse the ?search= param out of it below.
+const HomePage = ({ navigate, currentPath = '/marketplace' }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [listings, setListings] = useState([]);
@@ -170,14 +173,41 @@ const HomePage = ({ navigate }) => {
   const [nextCursor, setNextCursor] = useState(null);
   const [hasMore, setHasMore] = useState(false);
 
+  // Filter state driven by the Sidebar (category, price) and the Navbar
+  // (search, via the ?search= query param on currentPath).
+  const [activeCategory, setActiveCategory] = useState('All Items');
+  const [priceRange, setPriceRange] = useState({ min: '', max: '' });
+
+  const searchQuery = (() => {
+    const [, qs] = currentPath.split('?');
+    if (!qs) return '';
+    return new URLSearchParams(qs).get('search') || '';
+  })();
+
+  // NOTE: assumes the backend's GET /api/listings accepts `category`,
+  // `minPrice`, and `maxPrice` query params alongside the existing
+  // `search`/`limit`/`after` ones — confirm the exact param names against
+  // the real route before relying on this filtering.
+  const buildFilterParams = () => {
+    const params = {};
+    if (activeCategory && activeCategory !== 'All Items') params.category = activeCategory;
+    if (priceRange.min) params.minPrice = priceRange.min;
+    if (priceRange.max) params.maxPrice = priceRange.max;
+    if (searchQuery) params.search = searchQuery;
+    return params;
+  };
+
   const fetchListings = async (after = null) => {
-    const data = await listingsApi.getListings(after ? { after } : {});
+    const params = buildFilterParams();
+    if (after) params.after = after;
+    const data = await listingsApi.getListings(params);
     setListings((prev) => (after ? [...prev, ...data.listings] : data.listings));
     setNextCursor(data.pagination.nextCursor);
     setHasMore(data.pagination.hasMore);
   };
 
-  // Initial load
+  // Re-fetch from scratch whenever a filter changes (category, price, or
+  // the search query coming from the URL).
   useEffect(() => {
     (async () => {
       setIsLoading(true);
@@ -190,7 +220,8 @@ const HomePage = ({ navigate }) => {
         setIsLoading(false);
       }
     })();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCategory, priceRange.min, priceRange.max, searchQuery]);
 
   const handleLoadMore = async () => {
     if (!nextCursor) return;
@@ -221,13 +252,31 @@ const HomePage = ({ navigate }) => {
     }, 300); // matches the card's exit transition duration
   };
 
+  const handleCategorySelect = (category) => {
+    setActiveCategory(category);
+    setIsSidebarOpen(false); // close the mobile drawer once a filter is picked
+  };
+
+  const handlePriceApply = (min, max) => {
+    setPriceRange({ min, max });
+    setIsSidebarOpen(false);
+  };
+
   return (
     <div className="flex w-full relative">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        activeCategory={activeCategory}
+        onCategorySelect={handleCategorySelect}
+        onPriceApply={handlePriceApply}
+      />
 
       <div className="flex-1 p-4 sm:p-8 bg-gray-50 dark:bg-gray-950 w-full min-h-screen">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Marketplace Feed</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            {searchQuery ? `Results for "${searchQuery}"` : 'Marketplace Feed'}
+          </h1>
 
           <div className="flex items-center gap-3">
             <button
@@ -255,7 +304,11 @@ const HomePage = ({ navigate }) => {
           </div>
         ) : listings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-gray-400 dark:text-gray-500">
-            <p className="text-sm">No listings yet. Add one to get started.</p>
+            <p className="text-sm">
+              {searchQuery || activeCategory !== 'All Items' || priceRange.min || priceRange.max
+                ? "No listings match these filters."
+                : "No listings yet. Add one to get started."}
+            </p>
           </div>
         ) : (
           <>

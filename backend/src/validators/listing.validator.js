@@ -1,6 +1,5 @@
 const Joi = require("joi");
 
-// Validation for creating a brand new listing
 const createListingSchema = Joi.object({
     title: Joi.string().trim().min(3).max(100).required(),
     description: Joi.string().trim().allow("").optional(),
