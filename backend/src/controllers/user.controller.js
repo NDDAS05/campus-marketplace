@@ -5,7 +5,8 @@ const wrapAsync = require("../utils/wrapAsync");
 exports.getProfile = wrapAsync(async (req, res) => {
     const user = await User.findById(req.user._id)
         .select("-password")
-        .populate("myListings");
+        .populate("myListings")
+        .populate("wishlist");
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -18,7 +19,6 @@ exports.getProfile = wrapAsync(async (req, res) => {
 exports.updateProfile = wrapAsync(async (req, res) => {
     const { contactInfo, ...otherUpdates } = req.body;
     const user = await User.findById(req.user._id);
-    //  Defensive check!
     if (!user) {
         return res.status(404).json({ message: "User not found" });
     }
@@ -48,7 +48,7 @@ exports.updateProfile = wrapAsync(async (req, res) => {
     res.status(200).json({ 
         message, 
         skippedFields,
-        user: updatedUser 
+        user: updatedUser,
     });
 });
 
@@ -75,17 +75,6 @@ exports.getUserById = wrapAsync(async (req, res) => {
     }
 
     res.status(200).json(publicProfile);
-});
-
-// user.controller.js — update getProfile to also populate wishlist
-exports.getProfile = wrapAsync(async (req, res) => {
-    const user = await User.findById(req.user._id)
-        .select("-password")
-        .populate("myListings")
-        .populate("wishlist"); // <-- added
-
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.status(200).json(user.toObject());
 });
 
 // user.controller.js — new exports

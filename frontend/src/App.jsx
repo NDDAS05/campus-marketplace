@@ -16,6 +16,16 @@ export default function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [currentPath, setCurrentPath] = useState('/');
 
+  // Theme state — persisted in localStorage, falls back to 'light'.
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+
   const isLoggedIn = !!user;
 
   // On first load, ask the backend if the httpOnly cookie is still valid.
@@ -50,21 +60,21 @@ export default function App() {
     setCurrentPath('/');
   };
 
-  // Simple router logic to render correct component based on state.
-  // Dynamic segments (/listing/:id, /user/:id) are checked first since the
-  // switch below only does exact matches.
   const renderPage = () => {
-    if (currentPath.startsWith('/listing/')) {
-      const listingId = currentPath.slice('/listing/'.length);
+    // Separate the route from the query parameters
+    const [basePath] = currentPath.split('?');
+
+    if (basePath.startsWith('/listing/')) {
+      const listingId = basePath.slice('/listing/'.length);
       return <ListingDetailPage listingId={listingId} navigate={setCurrentPath} currentUser={user} />;
     }
-    if (currentPath.startsWith('/user/')) {
-      const userId = currentPath.slice('/user/'.length);
+    if (basePath.startsWith('/user/')) {
+      const userId = basePath.slice('/user/'.length);
       return <PublicProfilePage userId={userId} navigate={setCurrentPath} />;
     }
 
-    switch (currentPath) {
-      case '/': return <HomePage navigate={setCurrentPath} />;
+    switch (basePath) {
+      case '/': return <HomePage navigate={setCurrentPath} currentPath={currentPath} />;
       case '/login':
         return <AuthPage mode="login" onAuthSuccess={handleAuthSuccess} navigate={setCurrentPath} />;
       case '/signup':
@@ -82,7 +92,7 @@ export default function App() {
         return isLoggedIn
           ? <CreateListingPage navigate={setCurrentPath} />
           : <AuthPage mode="login" onAuthSuccess={handleAuthSuccess} navigate={setCurrentPath} message="Please log in to post an item" />;
-      default: return <HomePage navigate={setCurrentPath} />;
+      default: return <HomePage navigate={setCurrentPath} currentPath={currentPath} />;
     }
   };
 
@@ -90,19 +100,22 @@ export default function App() {
   // we're still checking the cookie on first load.
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-gray-300 border-t-black rounded-full animate-spin" />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-gray-300 dark:border-gray-700 border-t-black dark:border-t-white rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col font-sans text-gray-900 dark:text-gray-100">
       <Navbar
         isLoggedIn={isLoggedIn}
         onLogin={() => setCurrentPath('/login')}
         onLogout={handleLogout}
         navigate={setCurrentPath}
+        currentPath={currentPath}
+        theme={theme}
+        toggleTheme={toggleTheme}
       />
 
       {/* Main content wrapper */}

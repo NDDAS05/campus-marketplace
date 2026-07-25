@@ -15,6 +15,19 @@ const commentSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    dislikedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    // Once an admin dismisses a report, this comment is permanently
+    // excluded from the report queue — new reports keep incrementing
+    // dislikedBy, but it never requeues regardless of count.
+    reportDismissed: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
@@ -24,7 +37,6 @@ const commentSchema = new mongoose.Schema(
 const listingSchema = new mongoose.Schema(
   {
     category: {
-      // added more categories to the enum for better classification of items
       type: String,
       required: true,
       enum: [
@@ -75,11 +87,24 @@ const listingSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Listed", "Sold"],
-      default: "Listed",
+      enum: ["Pending", "Listed", "Under Review", "Rejected", "Sold"],
+      default: "Pending",
+    },
+    moderationReason: {
+      type: String,
+      default: null,
+    },
+    aiCheckFailed: {
+      type: Boolean,
+      default: false,
+    },
+    // Tracks edit/resubmission attempts on THIS listing, capped at 2/day.
+    // Separate from the account-wide 5-new-listings/day limit on createListing.
+    resubmissionCount: {
+      type: Number,
+      default: 0,
     },
     price: {
-      // Added item price field
       type: Number,
       required: true,
     },
