@@ -81,7 +81,7 @@ export default function App() {
         return <AuthPage mode="signup" onAuthSuccess={handleAuthSuccess} navigate={setCurrentPath} />;
       case '/profile':
         return isLoggedIn
-          ? <ProfilePage onLogout={handleLogout} />
+          ? <ProfilePage onLogout={handleLogout} navigate={setCurrentPath}/>
           : <AuthPage mode="login" onAuthSuccess={handleAuthSuccess} navigate={setCurrentPath} message="Please log in to view your profile" />;
       case '/messages':
         return isLoggedIn
