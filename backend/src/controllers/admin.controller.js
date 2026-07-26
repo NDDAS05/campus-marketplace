@@ -13,10 +13,11 @@ const signAdminToken = (userId) => {
 };
 
 const sendAdminTokenCookie = (res, token) => {
+  const isProd = process.env.NODE_ENV === "production";
   res.cookie("admin_token", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
     maxAge: 24 * 60 * 60 * 1000,
   });
 };
@@ -76,10 +77,11 @@ exports.getAdminMe = wrapAsync(async (req, res) => {
 });
 
 exports.adminLogout = (req, res) => {
+  const isProd = process.env.NODE_ENV === "production";
   res.clearCookie("admin_token", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
   });
   res.status(200).json({ message: "Logged out successfully" });
 };

@@ -12,10 +12,16 @@ const signToken = (userId) => {
 };
 
 const sendTokenCookie = (res, token) => {
+  const isProd = process.env.NODE_ENV === "production";
   res.cookie("token", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProd,
+    // "none" is required for cross-site cookies (Vercel frontend calling a
+    // Render backend on a different domain). Browsers reject
+    // sameSite: "none" over plain HTTP, so this only applies in prod where
+    // both sides are HTTPS. Locally, "lax" is fine since the Vite dev
+    // proxy makes requests same-site.
+    sameSite: isProd ? "none" : "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 };
@@ -169,10 +175,11 @@ exports.getMe = wrapAsync(async (req, res, next) => {
 });
 
 exports.logout = (req, res) => {
+  const isProd = process.env.NODE_ENV === "production";
   res.clearCookie("token", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
   });
   res.status(200).json({ message: "Logged out successfully" });
 };
