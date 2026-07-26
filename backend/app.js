@@ -8,7 +8,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const adminRoutes = require("./src/routes/admin.routes");
 
-app.use("trust proxy", 1);
+app.set("trust proxy", 1);
 // Define an array of allowed origins
    const allowedOrigins = [
      'http://localhost:5173', // For local development
