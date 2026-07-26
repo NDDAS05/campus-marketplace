@@ -83,7 +83,8 @@ export const authApi = {
   login: (payload) =>
     request(`/api/auth/login`, { method: "POST", body: JSON.stringify(payload) }),
 
-  // payload: { credential } — the Google ID token from the Sign-In button
+  // ADDED: Google login endpoint
+  // payload: { credential }
   googleLogin: (payload) =>
     request(`/api/auth/google`, { method: "POST", body: JSON.stringify(payload) }),
 

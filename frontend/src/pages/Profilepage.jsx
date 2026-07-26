@@ -8,12 +8,24 @@ const STREAM_OPTIONS = ["B.Tech", "B.Arch", "M.Tech", "PHD"];
 const DEPARTMENT_OPTIONS = ["CST", "IT", "EE", "ME", "CE", "AE", "MME", "MIN", "Architecture"];
 const SEMESTER_OPTIONS = ["1st Sem", "2nd Sem", "3rd Sem", "4th Sem", "5th Sem", "6th Sem", "7th Sem", "8th Sem"];
 
+// The Listing model has 5 possible statuses, not just Sold/Listed —
+// each needs its own badge color/label so a Pending or Under Review
+// listing doesn't get mislabeled as "Listed".
+const STATUS_BADGES = {
+  Listed: { label: "Listed", className: "bg-green-500/90" },
+  Sold: { label: "Sold", className: "bg-red-500/90" },
+  Pending: { label: "Pending Review", className: "bg-amber-500/90" },
+  "Under Review": { label: "Under Review", className: "bg-amber-500/90" },
+  Rejected: { label: "Rejected", className: "bg-gray-500/90" },
+};
+
 // --- Small owned-listing card: management view, not the browsing view from Home ---
-const OwnedListingCard = ({ listing, onToggleStatus, onDelete }) => {
+const OwnedListingCard = ({ listing, onToggleStatus, onDelete, navigate }) => {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleToggleStatus = async () => {
+  const handleToggleStatus = async (e) => {
+    e.stopPropagation(); // Prevents navigating when clicking the button
     setIsUpdatingStatus(true);
     try {
       await onToggleStatus(listing._id, listing.status === "Sold" ? "Listed" : "Sold");
@@ -24,7 +36,8 @@ const OwnedListingCard = ({ listing, onToggleStatus, onDelete }) => {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (e) => {
+    e.stopPropagation(); // Prevents navigating when clicking the button
     setIsDeleting(true);
     try {
       await onDelete(listing._id);
@@ -34,16 +47,22 @@ const OwnedListingCard = ({ listing, onToggleStatus, onDelete }) => {
     }
   };
 
+  const canToggleSoldListed = listing.status === "Listed" || listing.status === "Sold";
+  const badge = STATUS_BADGES[listing.status] || { label: listing.status, className: "bg-gray-500/90" };
+
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col">
+    <div 
+      onClick={() => navigate(`/listing/${listing._id}`)}
+      className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col cursor-pointer hover:shadow-md dark:hover:shadow-black/40 transition-all duration-300"
+    >
       <div className="relative h-40 w-full bg-gray-100 dark:bg-gray-800">
         <img
           src={listing.images?.[0]}
           alt={listing.title}
           className="w-full h-full object-cover"
         />
-        <div className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-xs font-bold text-white shadow-sm ${listing.status === "Sold" ? "bg-red-500/90" : "bg-green-500/90"}`}>
-          {listing.status === "Sold" ? "SOLD" : "Listed"}
+        <div className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-xs font-bold text-white shadow-sm ${badge.className}`}>
+          {badge.label}
         </div>
       </div>
 
@@ -53,19 +72,31 @@ const OwnedListingCard = ({ listing, onToggleStatus, onDelete }) => {
         </h3>
         <div className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">₹{listing.price}</div>
 
+        {listing.status === "Rejected" && listing.moderationReason && (
+          <p className="text-xs text-red-500 dark:text-red-400 mb-3 line-clamp-2" title={listing.moderationReason}>
+            {listing.moderationReason}
+          </p>
+        )}
+
         <div className="flex gap-2 mt-auto">
-          <button
-            onClick={handleToggleStatus}
-            disabled={isUpdatingStatus}
-            className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 flex items-center justify-center gap-1.5"
-          >
-            {isUpdatingStatus && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            Mark as {listing.status === "Sold" ? "Listed" : "Sold"}
-          </button>
+          {canToggleSoldListed ? (
+            <button
+              onClick={handleToggleStatus}
+              disabled={isUpdatingStatus}
+              className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors"
+            >
+              {isUpdatingStatus && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              Mark as {listing.status === "Sold" ? "Listed" : "Sold"}
+            </button>
+          ) : (
+            <div className="flex-1 py-2 rounded-lg border border-dashed border-gray-200 dark:border-gray-700 text-sm text-gray-400 dark:text-gray-500 flex items-center justify-center">
+              {listing.status === "Rejected" ? "Edit & resubmit to relist" : "Awaiting review"}
+            </div>
+          )}
           <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-50"
+            className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-50 transition-colors"
             title="Delete listing"
           >
             {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
@@ -77,10 +108,11 @@ const OwnedListingCard = ({ listing, onToggleStatus, onDelete }) => {
 };
 
 // --- Wishlist item card ---
-const WishlistCard = ({ listing, onRemove }) => {
+const WishlistCard = ({ listing, onRemove, navigate }) => {
   const [isRemoving, setIsRemoving] = useState(false);
 
-  const handleRemove = async () => {
+  const handleRemove = async (e) => {
+    e.stopPropagation(); // Prevents navigating when clicking the button
     setIsRemoving(true);
     try {
       await onRemove(listing._id);
@@ -91,13 +123,16 @@ const WishlistCard = ({ listing, onRemove }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col">
+    <div 
+      onClick={() => navigate(`/listing/${listing._id}`)}
+      className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col cursor-pointer hover:shadow-md dark:hover:shadow-black/40 transition-all duration-300"
+    >
       <div className="relative h-40 w-full bg-gray-100 dark:bg-gray-800">
         <img src={listing.images?.[0]} alt={listing.title} className="w-full h-full object-cover" />
         <button
           onClick={handleRemove}
           disabled={isRemoving}
-          className="absolute top-2.5 right-2.5 p-1.5 bg-white/90 dark:bg-gray-900/90 hover:bg-red-500 hover:text-white rounded-full text-gray-700 dark:text-gray-200 shadow-sm disabled:opacity-50"
+          className="absolute top-2.5 right-2.5 p-1.5 bg-white/90 dark:bg-gray-900/90 hover:bg-red-500 hover:text-white rounded-full text-gray-700 dark:text-gray-200 shadow-sm disabled:opacity-50 transition-colors"
           title="Remove from wishlist"
         >
           {isRemoving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
@@ -113,7 +148,7 @@ const WishlistCard = ({ listing, onRemove }) => {
   );
 };
 
-const ProfilePage = ({ onLogout }) => {
+const ProfilePage = ({ onLogout, navigate }) => { // <-- navigate is securely added here
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -122,7 +157,7 @@ const ProfilePage = ({ onLogout }) => {
   const [editForm, setEditForm] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
-  const [saveNotice, setSaveNotice] = useState(null); // e.g. "contactInfo is locked" message
+  const [saveNotice, setSaveNotice] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -158,8 +193,6 @@ const ProfilePage = ({ onLogout }) => {
     const value = field === "isContactDisplayable" ? e.target.checked : e.target.value;
     setEditForm((prev) => {
       const next = { ...prev, [field]: value };
-      // If Year changes and the currently-picked Semester no longer fits
-      // inside it, clear it rather than leave an invalid combination selected.
       if (field === "year") {
         const validSemesters = getValidSemesters(value);
         if (validSemesters && !validSemesters.includes(prev.semester)) {
@@ -175,15 +208,21 @@ const ProfilePage = ({ onLogout }) => {
     setIsSaving(true);
     setSaveError(null);
     try {
-      // contactInfo is "set once" server-side — only send it if it wasn't
-      // already locked, otherwise there's no point including it.
       const payload = { ...editForm };
       if (profile.contactInfo && profile.contactInfo.trim() !== "") {
         delete payload.contactInfo;
       }
 
       const data = await userApi.updateProfile(payload);
-      setProfile((prev) => ({ ...prev, ...data.user }));
+      
+      // Fixes the blank cards issue by preserving the populated arrays
+      setProfile((prev) => ({ 
+        ...prev, 
+        ...data.user,
+        myListings: prev.myListings,
+        wishlist: prev.wishlist 
+      }));
+
       if (data.skippedFields?.length > 0) {
         setSaveNotice(data.message);
       } else {
@@ -395,6 +434,7 @@ const ProfilePage = ({ onLogout }) => {
                   listing={listing}
                   onToggleStatus={handleToggleListingStatus}
                   onDelete={handleDeleteListing}
+                  navigate={navigate}
                 />
               ))}
             </div>
@@ -413,7 +453,12 @@ const ProfilePage = ({ onLogout }) => {
           {profile.wishlist?.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {profile.wishlist.map((listing) => (
-                <WishlistCard key={listing._id} listing={listing} onRemove={handleRemoveFromWishlist} />
+                <WishlistCard 
+                  key={listing._id} 
+                  listing={listing} 
+                  onRemove={handleRemoveFromWishlist} 
+                  navigate={navigate} 
+                />
               ))}
             </div>
           ) : (

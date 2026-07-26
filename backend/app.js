@@ -6,7 +6,7 @@ const authRoutes = require("./src/routes/auth.routes");
 const userRoutes = require("./src/routes/user.routes");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-
+const adminRoutes = require("./src/routes/admin.routes");
 app.use(cors({
     origin:process.env.CLIENT_URL,
     credentials:true
@@ -24,10 +24,13 @@ if(process.env.NODE_ENV=="development")
 app.use("/api/auth",authRoutes);
 app.use("/api/listings", listingRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.get("/api/test",(req,res)=>{
     res.json({message:"Campus MarketPlace API is Running Perfectly"});
 });
+
+
 
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
