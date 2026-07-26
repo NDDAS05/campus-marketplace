@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from "../components/common/Sidebar";
 import { Filter, ChevronLeft, ChevronRight, MapPin, Trash2, Pencil, Loader2 } from 'lucide-react';
 import { listingsApi } from "../utils/api"; // adjust path to wherever you save api.js
-import { getStatusStyles } from '../utils/listingStatus';
+import { getStatusStyles } from '../utils/ListingStatus';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 // --- SUBCOMPONENT: LISTING CARD ---
 const ListingCard = ({ listing, onDelete, isRemoving, navigate, currentUser }) => {
