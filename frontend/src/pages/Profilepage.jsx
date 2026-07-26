@@ -2,27 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { Pencil, MapPin, Trash2, Loader2, Heart, X, LogOut } from 'lucide-react';
 import { userApi, listingsApi } from '../utils/api';
 import { getAcademicYear, getValidSemesters } from '../utils/academicYear';
-
+import { getStatusStyles } from '../utils/listingStatus';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 const YEAR_OPTIONS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", "Graduated"];
 const STREAM_OPTIONS = ["B.Tech", "B.Arch", "M.Tech", "PHD"];
 const DEPARTMENT_OPTIONS = ["CST", "IT", "EE", "ME", "CE", "AE", "MME", "MIN", "Architecture"];
 const SEMESTER_OPTIONS = ["1st Sem", "2nd Sem", "3rd Sem", "4th Sem", "5th Sem", "6th Sem", "7th Sem", "8th Sem"];
 
-// The Listing model has 5 possible statuses, not just Sold/Listed —
-// each needs its own badge color/label so a Pending or Under Review
-// listing doesn't get mislabeled as "Listed".
-const STATUS_BADGES = {
-  Listed: { label: "Listed", className: "bg-green-500/90" },
-  Sold: { label: "Sold", className: "bg-red-500/90" },
-  Pending: { label: "Pending Review", className: "bg-amber-500/90" },
-  "Under Review": { label: "Under Review", className: "bg-amber-500/90" },
-  Rejected: { label: "Rejected", className: "bg-gray-500/90" },
-};
+// // The Listing model has 5 possible statuses, not just Sold/Listed —
+// // each needs its own badge color/label so a Pending or Under Review
+// // listing doesn't get mislabeled as "Listed".
+// const STATUS_BADGES = {
+//   Listed: { label: "Listed", className: "bg-green-500/90" },
+//   Sold: { label: "Sold", className: "bg-red-500/90" },
+//   Pending: { label: "Pending Review", className: "bg-amber-500/90" },
+//   "Under Review": { label: "Under Review", className: "bg-amber-500/90" },
+//   Rejected: { label: "Rejected", className: "bg-gray-500/90" },
+// };
 
 // --- Small owned-listing card: management view, not the browsing view from Home ---
 const OwnedListingCard = ({ listing, onToggleStatus, onDelete, navigate }) => {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleToggleStatus = async (e) => {
     e.stopPropagation(); // Prevents navigating when clicking the button
@@ -36,20 +38,21 @@ const OwnedListingCard = ({ listing, onToggleStatus, onDelete, navigate }) => {
     }
   };
 
-  const handleDelete = async (e) => {
-    e.stopPropagation(); // Prevents navigating when clicking the button
+  const handleConfirmDelete = async () => {
     setIsDeleting(true);
     try {
       await onDelete(listing._id);
+      setShowDeleteConfirm(false);
     } catch (err) {
       setIsDeleting(false);
+      setShowDeleteConfirm(false);
       alert(err.message || "Couldn't delete this listing.");
     }
   };
 
   const canToggleSoldListed = listing.status === "Listed" || listing.status === "Sold";
-  const badge = STATUS_BADGES[listing.status] || { label: listing.status, className: "bg-gray-500/90" };
-
+  const badge = getStatusStyles(listing.status);
+  const canEdit = listing.status === "Listed" || listing.status === "Rejected";
   return (
     <div 
       onClick={() => navigate(`/listing/${listing._id}`)}
@@ -61,7 +64,7 @@ const OwnedListingCard = ({ listing, onToggleStatus, onDelete, navigate }) => {
           alt={listing.title}
           className="w-full h-full object-cover"
         />
-        <div className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-xs font-bold text-white shadow-sm ${badge.className}`}>
+        <div className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-xs font-bold text-white shadow-sm ${badge.solidBadge}`}>
           {badge.label}
         </div>
       </div>
@@ -93,8 +96,17 @@ const OwnedListingCard = ({ listing, onToggleStatus, onDelete, navigate }) => {
               {listing.status === "Rejected" ? "Edit & resubmit to relist" : "Awaiting review"}
             </div>
           )}
+          {canEdit && (
+              <button
+                onClick={(e) => { e.stopPropagation(); navigate(`/listing/${listing._id}/edit`); }}
+                className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                title="Edit listing"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+            )}
           <button
-            onClick={handleDelete}
+            onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }}
             disabled={isDeleting}
             className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-50 transition-colors"
             title="Delete listing"
@@ -102,6 +114,19 @@ const OwnedListingCard = ({ listing, onToggleStatus, onDelete, navigate }) => {
             {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
           </button>
         </div>
+      </div>
+
+      <div onClick={(e) => e.stopPropagation()}>
+        <ConfirmDialog
+          isOpen={showDeleteConfirm}
+          title="Delete this listing?"
+          message="This can't be undone — the listing and its images will be permanently removed."
+          confirmLabel="Delete"
+          variant="danger"
+          isLoading={isDeleting}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
       </div>
     </div>
   );

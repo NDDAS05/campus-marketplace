@@ -53,6 +53,14 @@ const deleteComment = wrapAsync(async (req, res) => {
 
         await listing.save();
 
+        // FIX: without this, comments.user came back as raw unpopulated
+        // ObjectIds. The frontend replaces its ENTIRE comments array with
+        // this response, so every comment on the listing — not just the
+        // deleted one — would render its author as "Deleted user" until
+        // the page was reloaded. Matches the populate() addComment and
+        // toggleCommentDislike already do.
+        await listing.populate("comments.user", "name username");
+
         res.status(200).json({ message: "Comment deleted successfully", listing });
 });
 

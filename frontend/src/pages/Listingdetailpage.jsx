@@ -4,6 +4,13 @@ import {
   Trash2, Tag, Package
 } from 'lucide-react';
 import { listingsApi, userApi } from '../utils/api';
+import { getStatusStyles } from '../utils/listingStatus';
+import ConfirmDialog from '../components/common/ConfirmDialog';
+
+const CATEGORY_OPTIONS = [
+  "Books", "Electronics", "Cycles", "Hostel Essentials",
+  "Stationery", "Clothing", "Sports", "Other",
+];
 
 // --- Reusable pill button with a small hover "pop" tooltip ---
 // variant: "primary" | "secondary" | "danger"
@@ -35,6 +42,7 @@ const PillButton = ({ variant = "secondary", active, disabled, tooltip, icon: Ic
   );
 };
 
+// Pill stays as-is for category/year/department (unchanged, still uses tone prop)
 const Pill = ({ children, tone = "slate" }) => {
   const tones = {
     slate: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300",
@@ -44,6 +52,17 @@ const Pill = ({ children, tone = "slate" }) => {
   return (
     <span className={`text-xs font-medium px-3 py-1 rounded-full ${tones[tone]}`}>
       {children}
+    </span>
+  );
+};
+
+// Dedicated status pill — pulls its color from the shared getStatusStyles
+// utility so it always matches Home.jsx and Profilepage.jsx exactly.
+const StatusPill = ({ status }) => {
+  const { label, pill } = getStatusStyles(status);
+  return (
+    <span className={`text-xs font-medium px-3 py-1 rounded-full ${pill}`}>
+      {label}
     </span>
   );
 };
@@ -100,14 +119,17 @@ const ImageGallery = ({ images }) => {
 // --- Single comment row ---
 const CommentItem = ({ comment, currentUserId, onDelete, onGoToProfile }) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const isOwn = currentUserId && comment.user?._id === currentUserId;
 
-  const handleDelete = async () => {
+  const handleConfirmDelete = async () => {
     setIsDeleting(true);
     try {
       await onDelete(comment._id);
+      setShowDeleteConfirm(false);
     } catch (err) {
       setIsDeleting(false);
+      setShowDeleteConfirm(false);
       alert(err.message || "Couldn't delete this comment.");
     }
   };
@@ -138,7 +160,7 @@ const CommentItem = ({ comment, currentUserId, onDelete, onGoToProfile }) => {
       </div>
       {isOwn && !comment.isDeleted && (
         <button
-          onClick={handleDelete}
+          onClick={() => setShowDeleteConfirm(true)}
           disabled={isDeleting}
           className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 transition-colors flex-shrink-0 self-start"
           title="Delete comment"
@@ -146,6 +168,17 @@ const CommentItem = ({ comment, currentUserId, onDelete, onGoToProfile }) => {
           {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
         </button>
       )}
+
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        title="Delete this comment?"
+        message="This can't be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 };
@@ -169,6 +202,66 @@ const ListingDetailPage = ({ listingId, navigate, currentUser }) => {
 
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isDeletingListing, setIsDeletingListing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showSaveEditConfirm, setShowSaveEditConfirm] = useState(false);
+
+  // --- Inline "Edit Listing" form state (shown in place of the read-only
+  // title/location/description blocks below, instead of navigating away) ---
+  const [isEditingListing, setIsEditingListing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: "", description: "", price: "", category: "", count: 1, location: "",
+  });
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editError, setEditError] = useState(null);
+
+  const openEditForm = () => {
+    setEditForm({
+      title: listing.title || "",
+      description: listing.description || "",
+      price: listing.price ?? "",
+      category: listing.category || "",
+      count: listing.count || 1,
+      location: listing.location || "",
+    });
+    setEditError(null);
+    setIsEditingListing(true);
+  };
+
+  const handleEditFormChange = (field) => (e) => {
+    setEditForm((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handleEditFormSubmit = (e) => {
+    e.preventDefault();
+    setEditError(null);
+    setShowSaveEditConfirm(true);
+  };
+
+  const handleConfirmSaveEdit = async () => {
+    setIsSavingEdit(true);
+    try {
+      const payload = {
+        title: editForm.title,
+        description: editForm.description,
+        price: editForm.price,
+        category: editForm.category,
+        count: editForm.count || 1,
+        location: editForm.location,
+      };
+      // Same PUT /api/listings/:id the standalone EditListingPage uses —
+      // backend resets status to "Pending" and re-triggers moderation,
+      // so the returned listing already reflects that.
+      const data = await listingsApi.updateListing(listingId, payload);
+      setListing(data.listing);
+      setIsEditingListing(false);
+      setShowSaveEditConfirm(false);
+    } catch (err) {
+      setEditError(err.message || "Couldn't update this listing. Please try again.");
+      setShowSaveEditConfirm(false);
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -248,14 +341,14 @@ const ListingDetailPage = ({ listingId, navigate, currentUser }) => {
     }
   };
 
-  const handleDeleteListing = async () => {
-    if (!window.confirm("Delete this listing? This can't be undone.")) return;
+  const handleConfirmDeleteListing = async () => {
     setIsDeletingListing(true);
     try {
       await listingsApi.deleteListing(listingId);
       navigate("/profile");
     } catch (err) {
       setIsDeletingListing(false);
+      setShowDeleteConfirm(false);
       alert(err.message || "Couldn't delete this listing.");
     }
   };
@@ -287,12 +380,14 @@ const ListingDetailPage = ({ listingId, navigate, currentUser }) => {
       <div className="max-w-3xl mx-auto flex flex-col gap-6">
 
         {/* --- Title --- */}
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
-            {listing.title}
-          </h1>
-          <div className="text-2xl font-bold text-slate-700 dark:text-slate-200 mt-2">₹{listing.price}</div>
-        </div>
+        {!isEditingListing && (
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-slate-100 leading-tight">
+              {listing.title}
+            </h1>
+            <div className="text-2xl font-bold text-slate-700 dark:text-slate-200 mt-2">₹{listing.price}</div>
+          </div>
+        )}
 
         {/* --- Seller + pills --- */}
         <div className="flex flex-wrap items-center gap-3">
@@ -306,7 +401,7 @@ const ListingDetailPage = ({ listingId, navigate, currentUser }) => {
             {listing.sellerName}
           </button>
           <Pill>{listing.category}</Pill>
-          <Pill tone={listing.status === "Sold" ? "rose" : "emerald"}>{listing.status}</Pill>
+          <StatusPill status={listing.status} />
           {listing.sellerYear && <Pill>{listing.sellerYear}</Pill>}
           {listing.sellerDepartment && <Pill>{listing.sellerDepartment}</Pill>}
           {listing.count > 1 && (
@@ -314,51 +409,170 @@ const ListingDetailPage = ({ listingId, navigate, currentUser }) => {
           )}
         </div>
 
-        {/* --- Location --- */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 flex items-center gap-3 shadow-sm">
-          <MapPin className="w-5 h-5 text-slate-400 dark:text-slate-500 flex-shrink-0" />
-          <div>
-            <div className="text-xs text-slate-400 dark:text-slate-500">Location</div>
-            <div className="text-sm font-medium text-slate-700 dark:text-slate-200">{listing.location}</div>
-          </div>
-        </div>
+        {!isEditingListing ? (
+          <>
+            {/* --- Location --- */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 flex items-center gap-3 shadow-sm">
+              <MapPin className="w-5 h-5 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+              <div>
+                <div className="text-xs text-slate-400 dark:text-slate-500">Location</div>
+                <div className="text-sm font-medium text-slate-700 dark:text-slate-200">{listing.location}</div>
+              </div>
+            </div>
 
-        {/* --- Description --- */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-2">
-            <Tag className="w-4 h-4" /> Description
-          </h2>
-          <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">
-            {listing.description || "No description provided."}
-          </p>
-        </div>
+            {/* --- Description --- */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-sm">
+              <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-2">
+                <Tag className="w-4 h-4" /> Description
+              </h2>
+              <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">
+                {listing.description || "No description provided."}
+              </p>
+            </div>
+          </>
+        ) : (
+          /* --- Inline Edit Listing form (replaces title/location/description
+             while active — this is what shows in place of the old
+             navigate-to-a-separate-page behavior) --- */
+          <form
+            onSubmit={handleEditFormSubmit}
+            className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-6 shadow-sm flex flex-col gap-4"
+          >
+            <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400">Edit Listing</h2>
+
+            {editError && (
+              <div className="px-4 py-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900 text-rose-600 dark:text-rose-400 text-sm rounded-lg">
+                {editError}
+              </div>
+            )}
+
+            <div>
+              <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">Title</label>
+              <input
+                type="text"
+                value={editForm.title}
+                onChange={handleEditFormChange("title")}
+                required
+                minLength={3}
+                maxLength={100}
+                className="w-full bg-slate-100 dark:bg-slate-800 dark:text-slate-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">Description</label>
+              <textarea
+                value={editForm.description}
+                onChange={handleEditFormChange("description")}
+                rows={4}
+                className="w-full bg-slate-100 dark:bg-slate-800 dark:text-slate-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-500 outline-none resize-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">Price (₹)</label>
+                <input
+                  type="number"
+                  value={editForm.price}
+                  onChange={handleEditFormChange("price")}
+                  required
+                  min={0}
+                  className="w-full bg-slate-100 dark:bg-slate-800 dark:text-slate-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">Quantity</label>
+                <input
+                  type="number"
+                  value={editForm.count}
+                  onChange={handleEditFormChange("count")}
+                  min={1}
+                  step={1}
+                  className="w-full bg-slate-100 dark:bg-slate-800 dark:text-slate-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-500 outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">Category</label>
+                <select
+                  value={editForm.category}
+                  onChange={handleEditFormChange("category")}
+                  required
+                  className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-500 outline-none text-slate-700 dark:text-slate-200"
+                >
+                  {CATEGORY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">Location</label>
+                <input
+                  type="text"
+                  value={editForm.location}
+                  onChange={handleEditFormChange("location")}
+                  className="w-full bg-slate-100 dark:bg-slate-800 dark:text-slate-100 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-500 outline-none"
+                />
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-400 dark:text-slate-500 -mt-1">
+              Images can't be changed here — delete and repost if you need to swap photos. Saving resubmits this listing for review.
+            </p>
+
+            <div className="flex gap-3 mt-2">
+              <PillButton variant="primary" disabled={isSavingEdit}>
+                {isSavingEdit && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isSavingEdit ? "Saving..." : "Save & Resubmit"}
+              </PillButton>
+              <button
+                type="button"
+                onClick={() => { setIsEditingListing(false); setEditError(null); }}
+                disabled={isSavingEdit}
+                className="px-5 py-2.5 rounded-full border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
 
         {/* --- Images --- */}
         <ImageGallery images={listing.images} />
 
         {/* --- Actions --- */}
-        {isOwner ? (
-          <div className="flex flex-wrap gap-3">
-            <PillButton
-              variant="primary"
-              onClick={handleToggleListingStatus}
-              disabled={isUpdatingStatus}
-              tooltip={listing.status === "Sold" ? "Relist this item" : "Mark this item as sold"}
-            >
-              {isUpdatingStatus && <Loader2 className="w-4 h-4 animate-spin" />}
-              Mark as {listing.status === "Sold" ? "Listed" : "Sold"}
-            </PillButton>
-            <PillButton
-              variant="danger"
-              icon={Trash2}
-              onClick={handleDeleteListing}
-              disabled={isDeletingListing}
-              tooltip="Delete this listing"
-            >
-              {isDeletingListing ? "Deleting..." : "Delete Listing"}
-            </PillButton>
-          </div>
-        ) : (
+            {isEditingListing ? null : isOwner ? (
+            <div className="flex flex-wrap gap-3">
+              {["Listed", "Rejected"].includes(listing.status) && (
+                <PillButton
+                  variant="secondary"
+                  onClick={openEditForm}
+                  tooltip="Edit this listing"
+                >
+                  Edit Listing
+                </PillButton>
+              )}
+              <PillButton
+                variant="primary"
+                onClick={handleToggleListingStatus}
+                disabled={isUpdatingStatus}
+                tooltip={listing.status === "Sold" ? "Relist this item" : "Mark this item as sold"}
+              >
+                {isUpdatingStatus && <Loader2 className="w-4 h-4 animate-spin" />}
+                Mark as {listing.status === "Sold" ? "Listed" : "Sold"}
+              </PillButton>
+              <PillButton
+                variant="danger"
+                icon={Trash2}
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isDeletingListing}
+                tooltip="Delete this listing"
+              >
+                {isDeletingListing ? "Deleting..." : "Delete Listing"}
+              </PillButton>
+            </div>
+            ) : (
           <div className="flex flex-wrap gap-3">
             <PillButton
               variant="secondary"
@@ -441,6 +655,27 @@ const ListingDetailPage = ({ listingId, navigate, currentUser }) => {
         </div>
 
       </div>
+
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        title="Delete this listing?"
+        message="This can't be undone — the listing and its images will be permanently removed."
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={isDeletingListing}
+        onConfirm={handleConfirmDeleteListing}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      <ConfirmDialog
+        isOpen={showSaveEditConfirm}
+        title="Save and resubmit for review?"
+        message="This listing will go back to Pending until it's re-approved."
+        confirmLabel="Save & Resubmit"
+        isLoading={isSavingEdit}
+        onConfirm={handleConfirmSaveEdit}
+        onCancel={() => setShowSaveEditConfirm(false)}
+      />
     </div>
   );
 };

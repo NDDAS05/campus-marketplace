@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, X, ImagePlus } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { listingsApi } from '../utils/api';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 
@@ -8,12 +8,9 @@ const CATEGORY_OPTIONS = [
   "Stationery", "Clothing", "Sports", "Other",
 ];
 
-const MAX_IMAGES = 10; // matches upload.array('images', 10) on the backend
-const MAX_FILE_SIZE_MB = 5; // matches multer's limits.fileSize
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"]; // matches upload.middleware.js's fileFilter
-
+// listingId: from the route
 // navigate: the app's fake-router setter
-const CreateListingPage = ({ navigate }) => {
+const EditListingPage = ({ listingId, navigate }) => {
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -23,102 +20,126 @@ const CreateListingPage = ({ navigate }) => {
     location: "",
   });
 
-  // Each entry: { file, previewUrl }
-  const [images, setImages] = useState([]);
+  const [originalStatus, setOriginalStatus] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  // Revoke object URLs when the component unmounts or images change,
-  // so we don't leak memory from createObjectURL.
+  // Load the existing listing so the form starts pre-filled.
   useEffect(() => {
-    return () => {
-      images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    (async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const data = await listingsApi.getListingById(listingId);
+        const listing = data.listing;
+
+        // Guard against someone landing here directly on a Pending/Under
+        // Review listing (e.g. a stale link) — the backend would reject
+        // the save anyway, but this avoids showing an editable form for
+        // a listing that isn't actually editable right now.
+        if (!["Listed", "Rejected"].includes(listing.status)) {
+          setError(`This listing can't be edited while it's "${listing.status}".`);
+          setOriginalStatus(listing.status);
+          return;
+        }
+
+        setOriginalStatus(listing.status);
+        setForm({
+          title: listing.title || "",
+          description: listing.description || "",
+          price: listing.price ?? "",
+          category: listing.category || "",
+          count: listing.count || 1,
+          location: listing.location || "",
+        });
+      } catch (err) {
+        setError(err.message || "Couldn't load this listing.");
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [listingId]);
 
   const handleChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
-  const handleFilesSelected = (e) => {
-    const files = Array.from(e.target.files || []);
-    e.target.value = ""; // allow re-selecting the same file after removing it
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
-    const room = MAX_IMAGES - images.length;
-    if (room <= 0) {
-      setError(`You can only add up to ${MAX_IMAGES} images.`);
-      return;
-    }
-
-    const accepted = [];
-    const rejected = [];
-    for (const file of files.slice(0, room)) {
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        rejected.push(`${file.name} — only jpg, png, and webp images are allowed`);
-        continue;
-      }
-      if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-        rejected.push(`${file.name} is over ${MAX_FILE_SIZE_MB}MB`);
-        continue;
-      }
-      accepted.push({ file, previewUrl: URL.createObjectURL(file) });
-    }
-
-    if (accepted.length > 0) {
-      setImages((prev) => [...prev, ...accepted]);
-    }
-    setError(rejected.length > 0 ? rejected.join(", ") : null);
-  };
-
-  const removeImage = (index) => {
-    setImages((prev) => {
-      URL.revokeObjectURL(prev[index].previewUrl);
-      return prev.filter((_, i) => i !== index);
-    });
-  };
-
-  const [showPostConfirm, setShowPostConfirm] = useState(false);
-
-  // Form submit only validates and opens the confirmation — the actual
-  // POST happens in handleConfirmPost once the person says "yes".
+  // Form submit just opens the confirmation — the actual PUT happens in
+  // handleConfirmSave once the person says "yes".
   const handleFormSubmit = (e) => {
     e.preventDefault();
     setError(null);
-
-    if (images.length === 0) {
-      setError("Add at least one image.");
-      return;
-    }
-
-    setShowPostConfirm(true);
+    setShowSaveConfirm(true);
   };
 
-  const handleConfirmPost = async () => {
+  const handleConfirmSave = async () => {
     setIsSubmitting(true);
     try {
-      const formData = new FormData();
-      formData.append("title", form.title);
-      formData.append("description", form.description);
-      formData.append("price", form.price);
-      formData.append("category", form.category);
-      formData.append("count", form.count || 1);
-      if (form.location) formData.append("location", form.location);
-      images.forEach((img) => formData.append("images", img.file));
-
-      const data = await listingsApi.createListing(formData);
+      const payload = {
+        title: form.title,
+        description: form.description,
+        price: form.price,
+        category: form.category,
+        count: form.count || 1,
+        location: form.location,
+      };
+      const data = await listingsApi.updateListing(listingId, payload);
       navigate(`/listing/${data.listing._id}`);
     } catch (err) {
-      setError(err.message || "Couldn't create this listing. Please try again.");
+      // Surfaces both the "not editable right now" and the
+      // "daily edit limit reached" (429) messages from the backend as-is.
+      setError(err.message || "Couldn't update this listing. Please try again.");
       setIsSubmitting(false);
-      setShowPostConfirm(false);
+      setShowSaveConfirm(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex justify-center items-center py-24 bg-gray-50 dark:bg-gray-950 w-full min-h-screen">
+        <Loader2 className="w-6 h-6 animate-spin text-gray-400 dark:text-gray-500" />
+      </div>
+    );
+  }
+
+  // Not editable (wrong status) — show the reason, no form.
+  if (error && !originalStatus) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center py-24 bg-gray-50 dark:bg-gray-950 w-full min-h-screen text-red-500 dark:text-red-400 text-sm gap-3">
+        <p>{error}</p>
+        <button
+          onClick={() => navigate(`/listing/${listingId}`)}
+          className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-gray-700 dark:text-gray-200 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+        >
+          Back to listing
+        </button>
+      </div>
+    );
+  }
+  if (error && originalStatus && !["Listed", "Rejected"].includes(originalStatus)) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center py-24 bg-gray-50 dark:bg-gray-950 w-full min-h-screen text-red-500 dark:text-red-400 text-sm gap-3">
+        <p>{error}</p>
+        <button
+          onClick={() => navigate(`/listing/${listingId}`)}
+          className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-gray-700 dark:text-gray-200 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+        >
+          Back to listing
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 p-4 sm:p-8 bg-gray-50 dark:bg-gray-950 w-full min-h-screen">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Post an Item</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Edit Listing</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+          Saving will resubmit this listing for review before it goes live again.
+        </p>
 
         <form onSubmit={handleFormSubmit} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm p-6 flex flex-col gap-4">
           {error && (
@@ -136,7 +157,6 @@ const CreateListingPage = ({ navigate }) => {
               required
               minLength={3}
               maxLength={100}
-              placeholder="e.g. Engineering Mathematics Textbook"
               className="w-full bg-gray-100 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none"
             />
           </div>
@@ -147,7 +167,6 @@ const CreateListingPage = ({ navigate }) => {
               value={form.description}
               onChange={handleChange("description")}
               rows={4}
-              placeholder="Condition, why you're selling, anything a buyer should know..."
               className="w-full bg-gray-100 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none resize-none"
             />
           </div>
@@ -161,7 +180,6 @@ const CreateListingPage = ({ navigate }) => {
                 onChange={handleChange("price")}
                 required
                 min={0}
-                placeholder="0"
                 className="w-full bg-gray-100 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none"
               />
             </div>
@@ -197,45 +215,14 @@ const CreateListingPage = ({ navigate }) => {
                 type="text"
                 value={form.location}
                 onChange={handleChange("location")}
-                placeholder="Shibpur, Howrah"
                 className="w-full bg-gray-100 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 border-none rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-black dark:focus:ring-white outline-none"
               />
             </div>
           </div>
 
-          <div>
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">
-              Images ({images.length}/{MAX_IMAGES})
-            </label>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-              {images.map((img, i) => (
-                <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 group">
-                  <img src={img.previewUrl} alt={`Upload ${i + 1}`} className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(i)}
-                    className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-red-500 rounded-full text-white transition-colors"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-
-              {images.length < MAX_IMAGES && (
-                <label className="aspect-square rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center gap-1 text-gray-400 dark:text-gray-500 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-500 dark:hover:text-gray-400 cursor-pointer transition-colors">
-                  <ImagePlus className="w-5 h-5" />
-                  <span className="text-xs">Add</span>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    multiple
-                    onChange={handleFilesSelected}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
-          </div>
+          <p className="text-xs text-gray-400 dark:text-gray-500 -mt-1">
+            Images can't be changed here — delete and repost if you need to swap photos.
+          </p>
 
           <div className="flex gap-3 mt-2">
             <button
@@ -244,11 +231,11 @@ const CreateListingPage = ({ navigate }) => {
               className="flex-1 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg font-medium text-sm hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isSubmitting ? "Posting..." : "Post Listing"}
+              {isSubmitting ? "Saving..." : "Save & Resubmit"}
             </button>
             <button
               type="button"
-              onClick={() => navigate("/")}
+              onClick={() => navigate(`/listing/${listingId}`)}
               disabled={isSubmitting}
               className="px-6 py-3 border border-gray-200 dark:border-gray-700 rounded-lg font-medium text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
             >
@@ -259,16 +246,16 @@ const CreateListingPage = ({ navigate }) => {
       </div>
 
       <ConfirmDialog
-        isOpen={showPostConfirm}
-        title="Post this listing?"
-        message="It'll be submitted for review before it appears in the marketplace."
-        confirmLabel="Post Listing"
+        isOpen={showSaveConfirm}
+        title="Save and resubmit for review?"
+        message="This listing will go back to Pending until it's re-approved."
+        confirmLabel="Save & Resubmit"
         isLoading={isSubmitting}
-        onConfirm={handleConfirmPost}
-        onCancel={() => setShowPostConfirm(false)}
+        onConfirm={handleConfirmSave}
+        onCancel={() => setShowSaveConfirm(false)}
       />
     </div>
   );
 };
 
-export default CreateListingPage;
+export default EditListingPage;
