@@ -4,7 +4,7 @@ import {
   Trash2, Tag, Package
 } from 'lucide-react';
 import { listingsApi, userApi } from '../utils/api';
-import { getStatusStyles } from '../utils/listingStatus';
+import { getStatusStyles } from '../utils/ListingStatus';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 
 const CATEGORY_OPTIONS = [

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Pencil, MapPin, Trash2, Loader2, Heart, X, LogOut } from 'lucide-react';
 import { userApi, listingsApi } from '../utils/api';
 import { getAcademicYear, getValidSemesters } from '../utils/academicYear';
-import { getStatusStyles } from '../utils/listingStatus';
+import { getStatusStyles } from '../utils/ListingStatus';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 const YEAR_OPTIONS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", "Graduated"];
 const STREAM_OPTIONS = ["B.Tech", "B.Arch", "M.Tech", "PHD"];
