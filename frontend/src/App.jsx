@@ -4,7 +4,7 @@ import HomePage from './pages/Home';
 import AuthPage from './pages/Authpage';
 import ProfilePage from './pages/Profilepage';
 import MessagesPage from './pages/Messagepage';
-import ListingDetailPage from './pages/ListingDetailPage';
+import ListingDetailPage from './pages/ListingdetailPage';
 import PublicProfilePage from './pages/PublicProfilePage';
 import { authApi } from './utils/api';
 import LandingPage from './pages/LandingPage';
