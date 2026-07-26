@@ -1,3 +1,4 @@
+// validators/listing.validator.js
 const Joi = require("joi");
 
 const createListingSchema = Joi.object({

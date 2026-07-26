@@ -7,6 +7,9 @@ const { getProfile, updateProfile, getUserById, addToWishlist, removeFromWishlis
 
 router.get('/profile', isLoggedIn, getProfile);
 router.put('/profile', isLoggedIn, validate(updateProfileSchema), updateProfile);
+//Wishlist feature: Will be shown in profile page
+router.post('/wishlist/:listingId', isLoggedIn, addToWishlist);
+router.delete('/wishlist/:listingId', isLoggedIn, removeFromWishlist);
 
 router.post('/wishlist/:listingId', isLoggedIn, addToWishlist);
 router.delete('/wishlist/:listingId', isLoggedIn, removeFromWishlist);
