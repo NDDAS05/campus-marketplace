@@ -3,7 +3,7 @@ import LandingNavbar from '../components/common/LandingNavbar';
 
 // --- REAL TECH STACK SVGS ---
 const LogoReact = () => (
-  <svg viewBox="-11.5 -10.23174 23 20.46348" className="w-12 h-12 text-[#61dafb] group-hover:rotate-180 transition-transform duration-1000">
+  <svg viewBox="-11.5 -10.23174 23 20.46348" className="w-10 h-10 text-[#61dafb] group-hover:rotate-180 transition-transform duration-1000">
     <circle cx="0" cy="0" r="2.05" fill="currentColor"/>
     <g stroke="currentColor" strokeWidth="1" fill="none">
       <ellipse rx="11" ry="4.2"/>
@@ -14,7 +14,7 @@ const LogoReact = () => (
 );
 
 const LogoNode = () => (
-  <svg viewBox="0 0 128 128" className="w-12 h-12 text-[#339933] overflow-visible">
+  <svg viewBox="0 0 128 128" className="w-10 h-10 text-[#339933] overflow-visible">
     <path fill="currentColor" d="M118.232 40.548L66.726 10.741c-1.688-.973-3.766-.973-5.454 0L9.766 40.548a5.454 5.454 0 0 0-2.727 4.721v59.61c0 1.895 1.01 3.633 2.727 4.606l51.506 29.807c1.688.974 3.766.974 5.454 0l51.506-29.807c1.717-.973 2.727-2.711 2.727-4.606v-59.61a5.454 5.454 0 0 0-2.727-4.721z"/>
     <path fill="#FFF" d="M102.774 91.077l-35.885 20.73-35.892-20.73V49.61l35.892-20.716 35.885 20.716v41.467z"/>
     <path fill="#339933" d="M63.674 97.433v-19.16l-18.064 10.512V69.76l18.064-10.455V40.233L36.315 56.12v31.78l27.359 15.86v-6.327zm6.438-2.613V75.66l18.071-10.513v19.025l18.064-10.455V41.936l-36.135 20.89v19.16l18.071-10.426v6.326L66.897 90.354v4.466z"/>
@@ -22,25 +22,25 @@ const LogoNode = () => (
 );
 
 const LogoMongo = () => (
-  <svg viewBox="0 0 128 128" className="w-12 h-12 text-[#47A248]">
+  <svg viewBox="0 0 128 128" className="w-10 h-10 text-[#47A248]">
     <path fill="currentColor" d="M60.103 118.028c-7.391-9.988-16.14-23.704-16.14-43.235 0-14.887 5.176-32.964 15.313-52.548 1.488-2.84 2.87-3.901 3.535-3.955.701-.053 2.316.921 4.238 4.246 11.233 19.344 17.514 36.985 17.514 51.536 0 18.072-7.512 31.815-14.975 42.482-1.353 2.073-3.238 4.792-3.411 7.151-.122 1.947-.643 3.99-1.503 4.295-.884.288-2.223-2.176-4.571-9.972z"/>
   </svg>
 );
 
 const LogoExpress = () => (
-  <svg viewBox="0 0 128 128" className="w-12 h-12 text-slate-800 dark:text-slate-100">
+  <svg viewBox="0 0 128 128" className="w-10 h-10 text-slate-800 dark:text-slate-100">
     <text x="10" y="80" fontFamily="Arial, sans-serif" fontSize="48" fontWeight="bold" fill="currentColor">ex</text>
   </svg>
 );
 
 const LogoSocket = () => (
-  <svg viewBox="0 0 128 128" className="w-12 h-12 text-slate-900 dark:text-white">
+  <svg viewBox="0 0 128 128" className="w-10 h-10 text-slate-900 dark:text-white">
     <path fill="currentColor" d="M64 5.333L10.667 32v64L64 122.667 117.333 96V32L64 5.333zM64 112L21.333 90.667V37.333L64 16l42.667 21.333v53.334L64 112zm5.333-53.333l16-21.334h-21.333v-16L48 42.667h21.333v16l-16 21.333h21.333v16L96 74.667H74.667v-16h-5.334z"/>
   </svg>
 );
 
 const LogoGroq = () => (
-  <svg viewBox="0 0 24 24" className="w-12 h-12 text-[#f97316]">
+  <svg viewBox="0 0 24 24" className="w-10 h-10 text-[#f97316]">
     <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />
   </svg>
 );
@@ -237,7 +237,7 @@ const LandingPage = ({ navigate, isLoggedIn, theme, toggleTheme }) => {
       {/* =========================================
           SECTION 1: HERO
           ========================================= */}
-      <section id="hero" className="relative w-full pt-32 pb-16 lg:pt-40 lg:pb-24 z-10 transition-colors duration-700">
+      <section id="hero" className="relative w-full pt-32 pb-20 lg:pt-44 lg:pb-28 z-10 transition-colors duration-700">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center mt-8">
           
           <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 via-purple-500 to-emerald-500 dark:from-cyan-400 dark:via-purple-400 dark:to-emerald-400 drop-shadow-sm animate-bg-gradient">
@@ -294,34 +294,34 @@ const LandingPage = ({ navigate, isLoggedIn, theme, toggleTheme }) => {
       <section id="features" className="relative w-full py-16 lg:py-24 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6" style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4" style={{ fontFamily: "'Poppins', sans-serif" }}>
               Built for the Community
             </h2>
-            <p className="text-lg md:text-xl text-slate-700 dark:text-slate-300 max-w-3xl">
+            <p className="text-base md:text-lg text-slate-700 dark:text-slate-300 max-w-3xl">
               Exchange study materials, lab equipment, and hostel essentials securely within the campus boundaries. We deliver a tailored ecosystem to bypass the clutter of public forums.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {CONFIG.features.map((feature) => (
               <div 
                 key={feature.id} 
-                className={`relative overflow-hidden ${feature.tintClass} backdrop-blur-xl rounded-[2rem] p-10 shadow-lg border transition-all duration-500 group hover:-translate-y-2 ${feature.glowClass} flex flex-col h-full min-h-[320px]`}
+                className={`relative overflow-hidden ${feature.tintClass} backdrop-blur-xl rounded-3xl p-6 shadow-lg border transition-all duration-500 group hover:-translate-y-2 ${feature.glowClass} flex flex-col h-full`}
               >
-                <div className={`absolute -bottom-8 -right-8 w-48 h-48 opacity-10 dark:opacity-20 transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-12 ${feature.iconColor}`}>
+                <div className={`absolute -bottom-6 -right-6 w-28 h-28 opacity-10 dark:opacity-20 transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-12 ${feature.iconColor}`}>
                   {feature.icon}
                 </div>
 
-                <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-8 bg-white/60 dark:bg-slate-900/60 shadow-sm border border-white/40 dark:border-slate-700/50 ${feature.iconColor} group-hover:scale-110 transition-transform duration-500 relative z-10`}>
-                  <div className="w-10 h-10">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-white/60 dark:bg-slate-900/60 shadow-sm border border-white/40 dark:border-slate-700/50 ${feature.iconColor} group-hover:scale-110 transition-transform duration-500 relative z-10`}>
+                  <div className="w-6 h-6">
                     {feature.icon}
                   </div>
                 </div>
                 
-                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4 relative z-10" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 relative z-10" style={{ fontFamily: "'Poppins', sans-serif" }}>
                   {feature.title}
                 </h3>
-                <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-lg relative z-10 flex-grow">
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-sm relative z-10 flex-grow">
                   {feature.description}
                 </p>
               </div>
@@ -338,10 +338,10 @@ const LandingPage = ({ navigate, isLoggedIn, theme, toggleTheme }) => {
       <section id="tech" className="relative w-full py-16 lg:py-24 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6" style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4" style={{ fontFamily: "'Poppins', sans-serif" }}>
               The Engine Room
             </h2>
-            <p className="text-lg md:text-xl text-slate-700 dark:text-slate-300 max-w-3xl">
+            <p className="text-base md:text-lg text-slate-700 dark:text-slate-300 max-w-3xl">
               Powered by an industry-standard software stack. Our architecture guarantees optimal speed, robust security, and high scalability for continuous peer-to-peer usage.
             </p>
           </div>
@@ -350,14 +350,14 @@ const LandingPage = ({ navigate, isLoggedIn, theme, toggleTheme }) => {
             {CONFIG.techStack.map((tech, idx) => (
               <div 
                 key={idx} 
-                className={`group relative ${tech.tint} backdrop-blur-md p-8 rounded-[2rem] border shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex items-center gap-6`}
+                className={`group relative ${tech.tint} backdrop-blur-md p-6 rounded-[2rem] border shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex items-center gap-5`}
               >
                 <div className="flex-shrink-0 group-hover:scale-110 transition-transform duration-500 drop-shadow-md">
                   {tech.icon}
                 </div>
                 <div>
-                  <span className="block font-bold text-slate-900 dark:text-white text-xl mb-1">{tech.name}</span>
-                  <span className="block text-sm text-slate-600 dark:text-slate-300 font-medium uppercase tracking-wider">{tech.role}</span>
+                  <span className="block font-bold text-slate-900 dark:text-white text-lg mb-1">{tech.name}</span>
+                  <span className="block text-xs text-slate-600 dark:text-slate-300 font-medium uppercase tracking-wider">{tech.role}</span>
                 </div>
               </div>
             ))}
@@ -373,57 +373,57 @@ const LandingPage = ({ navigate, isLoggedIn, theme, toggleTheme }) => {
       <section id="builders" className="relative w-full pt-16 pb-32 lg:pt-24 lg:pb-40 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6" style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4" style={{ fontFamily: "'Poppins', sans-serif" }}>
               Meet the Builders
             </h2>
-            <p className="text-lg md:text-xl text-slate-700 dark:text-slate-300 max-w-3xl">
+            <p className="text-base md:text-lg text-slate-700 dark:text-slate-300 max-w-3xl">
               A passion project engineered to solve specific campus challenges. We combine clean code with modern design principles to build reliable tools for our peers.
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full" style={{ fontFamily: "'Poppins', sans-serif" }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full" style={{ fontFamily: "'Poppins', sans-serif" }}>
             {CONFIG.builders.map((builder, idx) => (
               <div 
                 key={idx} 
-                className="flex flex-col bg-white/60 dark:bg-slate-900/50 backdrop-blur-xl rounded-[2rem] p-8 md:p-10 border border-slate-900/10 dark:border-white/10 shadow-lg w-full group transition-all hover:shadow-2xl hover:-translate-y-1"
+                className="flex flex-col bg-white/60 dark:bg-slate-900/50 backdrop-blur-xl rounded-3xl p-5 md:p-6 border border-slate-900/10 dark:border-white/10 shadow-lg w-full group transition-all hover:shadow-2xl hover:-translate-y-1"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-8">
-                  <div className={`w-20 h-20 flex-shrink-0 bg-gradient-to-br ${builder.gradient} rounded-full flex items-center justify-center text-3xl font-black text-white shadow-lg`}>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+                  <div className={`w-12 h-12 flex-shrink-0 bg-gradient-to-br ${builder.gradient} rounded-full flex items-center justify-center text-lg font-black text-white shadow-lg`}>
                     {builder.initial}
                   </div>
                   <div>
-                    <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white mb-1">{builder.name}</h3>
-                    <p className="text-sm font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-widest">{builder.role}</p>
+                    <h3 className="text-lg font-extrabold text-slate-900 dark:text-white mb-0.5">{builder.name}</h3>
+                    <p className="text-xs font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-widest">{builder.role}</p>
                   </div>
                 </div>
 
-                <div className="mb-10 flex-grow">
-                  <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-lg mb-6">
+                <div className="mb-5 flex-grow">
+                  <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-sm mb-3">
                     {builder.description}
                   </p>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed border-l-2 border-slate-400 dark:border-slate-600 pl-4">
+                  <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed border-l-2 border-slate-400 dark:border-slate-600 pl-3">
                     <span className="font-semibold text-slate-800 dark:text-slate-200">{builder.college}</span><br/>
                     {builder.branch}
                   </p>
                 </div>
 
                 {/* Permanent Inner Glass Pills for Links */}
-                <div className="mt-auto flex flex-col sm:flex-row gap-4">
+                <div className="mt-auto flex flex-col sm:flex-row gap-3">
                   <a 
                     href={builder.github} 
                     target="_blank" 
                     rel="noreferrer" 
-                    className="flex-1 py-3.5 rounded-full bg-slate-900/5 dark:bg-white/10 border border-slate-900/10 dark:border-white/20 hover:bg-slate-900/10 dark:hover:bg-white/20 text-slate-900 dark:text-white transition-all duration-300 flex justify-center items-center gap-2 font-semibold hover:-translate-y-1 hover:shadow-md"
+                    className="flex-1 py-2.5 rounded-full bg-slate-900/5 dark:bg-white/10 border border-slate-900/10 dark:border-white/20 hover:bg-slate-900/10 dark:hover:bg-white/20 text-slate-900 dark:text-white transition-all duration-300 flex justify-center items-center gap-2 font-semibold text-sm hover:-translate-y-1 hover:shadow-md"
                   >
-                    <IconGithub className="w-5 h-5" /> GitHub
+                    <IconGithub className="w-4 h-4" /> GitHub
                   </a>
                   <a 
                     href={builder.linkedin} 
                     target="_blank" 
                     rel="noreferrer" 
-                    className="flex-1 py-3.5 rounded-full bg-blue-600/10 dark:bg-blue-900/40 border border-blue-600/20 dark:border-blue-700/40 hover:bg-blue-600/20 dark:hover:bg-blue-800/50 text-blue-700 dark:text-blue-300 transition-all duration-300 flex justify-center items-center gap-2 font-semibold hover:-translate-y-1 hover:shadow-md"
+                    className="flex-1 py-2.5 rounded-full bg-blue-600/10 dark:bg-blue-900/40 border border-blue-600/20 dark:border-blue-700/40 hover:bg-blue-600/20 dark:hover:bg-blue-800/50 text-blue-700 dark:text-blue-300 transition-all duration-300 flex justify-center items-center gap-2 font-semibold text-sm hover:-translate-y-1 hover:shadow-md"
                   >
-                    <IconLinkedin className="w-5 h-5" /> LinkedIn
+                    <IconLinkedin className="w-4 h-4" /> LinkedIn
                   </a>
                 </div>
               </div>
