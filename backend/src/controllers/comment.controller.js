@@ -53,7 +53,49 @@ const deleteComment = wrapAsync(async (req, res) => {
 
         await listing.save();
 
+        // FIX: without this, comments.user came back as raw unpopulated
+        // ObjectIds. The frontend replaces its ENTIRE comments array with
+        // this response, so every comment on the listing — not just the
+        // deleted one — would render its author as "Deleted user" until
+        // the page was reloaded. Matches the populate() addComment and
+        // toggleCommentDislike already do.
+        await listing.populate("comments.user", "name username");
+
         res.status(200).json({ message: "Comment deleted successfully", listing });
 });
 
-module.exports = { addComment, deleteComment };
+// PATCH /api/listings/:id/comments/:commentId/dislike
+const toggleCommentDislike = wrapAsync(async (req, res) => {
+  const { id, commentId } = req.params;
+
+  const listing = await Listing.findById(id);
+  if (!listing) {
+    return res.status(404).json({ message: "Listing not found" });
+  }
+
+  const comment = listing.comments.id(commentId);
+  if (!comment) {
+    return res.status(404).json({ message: "Comment not found" });
+  }
+
+  // Can't dislike your own comment
+  if (comment.user.toString() === req.user._id.toString()) {
+    return res.status(403).json({ message: "You can't dislike your own comment" });
+  }
+
+  const userId = req.user._id.toString();
+  const alreadyDisliked = comment.dislikedBy.some((id) => id.toString() === userId);
+
+  if (alreadyDisliked) {
+    comment.dislikedBy = comment.dislikedBy.filter((id) => id.toString() !== userId);
+  } else {
+    comment.dislikedBy.push(req.user._id);
+  }
+
+  await listing.save();
+  await listing.populate("comments.user", "name username");
+
+  res.status(200).json({ message: "Dislike toggled", listing });
+});
+
+module.exports = { addComment, deleteComment, toggleCommentDislike };
