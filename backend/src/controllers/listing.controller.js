@@ -77,16 +77,17 @@ const getListings = wrapAsync(async (req, res) => {
   const pipeline = [];
 
   if (search) {
+    const wildcardQuery = `*${search}*`;
     pipeline.unshift({
       $search: {
         index: "default",
         compound: {
           should: [
-            { text: { query: search, path: "category", score: { boost: { value: 5 } } } },
-            { text: { query: search, path: "title", score: { boost: { value: 3 } } } },
-            { text: { query: search, path: "sellerDepartment", score: { boost: { value: 2 } } } },
-            { text: { query: search, path: "description", score: { boost: { value: 1 } } } },
-            { text: { query: search, path: "sellerName", score: { boost: { value: 1 } } } },
+            { wildcard: { query: wildcardQuery, path: "category", score: { boost: { value: 5 } } } },
+            { wildcard: { query: wildcardQuery, path: "title", score: { boost: { value: 3 } } } },
+            { wildcard: { query: wildcardQuery, path: "sellerDepartment", score: { boost: { value: 2 } } } },
+            { wildcard: { query: wildcardQuery, path: "description", score: { boost: { value: 1 } } } },
+            { wildcard: { query: wildcardQuery, path: "sellerName", score: { boost: { value: 1 } } } },
           ],
         },
       },
