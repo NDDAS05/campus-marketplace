@@ -83,11 +83,11 @@ const getListings = wrapAsync(async (req, res) => {
         index: "default",
         compound: {
           should: [
-            { wildcard: { query: wildcardQuery, path: "category", score: { boost: { value: 5 } } } },
-            { wildcard: { query: wildcardQuery, path: "title", score: { boost: { value: 3 } } } },
-            { wildcard: { query: wildcardQuery, path: "sellerDepartment", score: { boost: { value: 2 } } } },
-            { wildcard: { query: wildcardQuery, path: "description", score: { boost: { value: 1 } } } },
-            { wildcard: { query: wildcardQuery, path: "sellerName", score: { boost: { value: 1 } } } },
+            { wildcard: { query: wildcardQuery, path: "category", allowAnalyzedField: true, score: { boost: { value: 5 } } } },
+            { wildcard: { query: wildcardQuery, path: "title", allowAnalyzedField: true, score: { boost: { value: 3 } } } },
+            { wildcard: { query: wildcardQuery, path: "sellerDepartment", allowAnalyzedField: true, score: { boost: { value: 2 } } } },
+            { wildcard: { query: wildcardQuery, path: "description", allowAnalyzedField: true, score: { boost: { value: 1 } } } },
+            { wildcard: { query: wildcardQuery, path: "sellerName", allowAnalyzedField: true, score: { boost: { value: 1 } } } },
           ],
         },
       },
