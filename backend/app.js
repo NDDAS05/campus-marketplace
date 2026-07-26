@@ -11,6 +11,7 @@ const adminRoutes = require("./src/routes/admin.routes");
    const allowedOrigins = [
      'http://localhost:5173', // For local development
      process.env.CLIENT_URL,  // Your primary Vercel domain
+     "https://campus-hive-gamma.vercel.app/",
      'https://campus-hive-git-final-nddassuvro2005-4772s-projects.vercel.app', // Branch domain
      'https://campus-hive-ji0cd01ff-nddassuvro2005-4772s-projects.vercel.app'  // Current hash domain
    ];
