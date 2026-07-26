@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, User, Plus, Menu, X, ArrowLeft, Sun, Moon } from 'lucide-react';
+import { Search, User, Plus, Menu, X, Sun, Moon } from 'lucide-react';
 
 const Navbar = ({ isLoggedIn, onLogin, onLogout, navigate, theme, toggleTheme, currentPath = '/marketplace' }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -34,23 +34,13 @@ const Navbar = ({ isLoggedIn, onLogin, onLogout, navigate, theme, toggleTheme, c
       
       <div className="flex justify-between items-center px-4 sm:px-8 py-4 relative">
         
-        {/* Left: Dynamic Brand or Back Button */}
-        {!isHome ? (
-          <button 
-            onClick={() => handleNavigate('/marketplace')}
-            className="flex items-center gap-2 text-gray-900 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors pr-2"
-          >
-            <ArrowLeft className="w-6 h-6" />
-            <span className="font-semibold text-lg hidden sm:block">Back</span>
-          </button>
-        ) : (
-          <div 
-            onClick={() => handleNavigate('/marketplace')}
-            className="text-lg sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white cursor-pointer hover:opacity-80 transition-opacity truncate pr-2"
-          >
-            CampusHive
-          </div>
-        )}
+        {/* Left: Brand */}
+        <div 
+          onClick={() => handleNavigate('/marketplace')}
+          className="text-lg sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white cursor-pointer hover:opacity-80 transition-opacity truncate pr-2"
+        >
+          CampusHive
+        </div>
 
         {/* Middle: Desktop Search Bar */}
         {isLoggedIn && isHome && (

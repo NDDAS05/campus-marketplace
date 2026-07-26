@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from "../components/common/Sidebar";
-import { Filter, ChevronLeft, ChevronRight, MapPin, Trash2, Loader2 } from 'lucide-react';
+import { Filter, ChevronLeft, ChevronRight, MapPin, Trash2, Pencil, Loader2 } from 'lucide-react';
 import { listingsApi } from "../utils/api"; // adjust path to wherever you save api.js
-
+import { getStatusStyles } from '../utils/listingStatus';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 // --- SUBCOMPONENT: LISTING CARD ---
-const ListingCard = ({ listing, onDelete, isRemoving, navigate }) => {
+const ListingCard = ({ listing, onDelete, isRemoving, navigate, currentUser }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Only the listing's own seller should ever see/use the delete button.
+  const isOwner = currentUser && listing.seller?._id === currentUser.id;
 
   useEffect(() => {
     const t = requestAnimationFrame(() => setIsMounted(true));
@@ -35,14 +40,14 @@ const ListingCard = ({ listing, onDelete, isRemoving, navigate }) => {
     setCurrentImageIndex((prev) => (prev === 0 ? listing.images.length - 1 : prev - 1));
   };
 
-  const handleDeleteClick = async (e) => {
-    e.stopPropagation();
+  const handleConfirmDelete = async () => {
     setIsDeleting(true);
     try {
       await onDelete(listing._id);
+      setShowDeleteConfirm(false);
     } catch (err) {
-      // Failed on the server — don't leave the card in a "deleting" limbo state
       setIsDeleting(false);
+      setShowDeleteConfirm(false);
       alert(err.message || "Couldn't delete this listing. Please try again.");
     }
   };
@@ -83,24 +88,34 @@ const ListingCard = ({ listing, onDelete, isRemoving, navigate }) => {
           {listing.category}
         </div>
 
-        {listing.status === "Sold" ? (
-          <div className="absolute top-3 right-3 bg-red-500/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm">
-            SOLD OUT
-          </div>
-        ) : (
-          <div className="absolute top-3 right-3 bg-green-500/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm">
-            Available
+        <div className={`absolute top-3 right-3 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold shadow-sm ${getStatusStyles(listing.status).solidBadge}`}>
+            {listing.status === "Listed" ? "Available" : getStatusStyles(listing.status).label}
+        </div>
+
+        {isOwner && (
+          <div className={`absolute bottom-3 right-3 flex items-center gap-2 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+            {/* Only listings the seller can actually resubmit (Listed or
+                Rejected) get an edit icon — Pending/Under Review/Sold
+                match OwnedListingCard's canEdit rule in Profilepage.jsx. */}
+            {(listing.status === "Listed" || listing.status === "Rejected") && (
+              <button
+                onClick={(e) => { e.stopPropagation(); navigate(`/listing/${listing._id}/edit`); }}
+                className="p-1.5 bg-white/90 dark:bg-gray-900/90 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black rounded-full text-gray-700 dark:text-gray-200 shadow-md transition-colors duration-200"
+                title="Edit listing"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }}
+              disabled={isDeleting}
+              className="p-1.5 bg-white/90 dark:bg-gray-900/90 hover:bg-red-500 hover:text-white rounded-full text-gray-700 dark:text-gray-200 shadow-md transition-all duration-200 disabled:opacity-50"
+              title="Remove listing"
+            >
+              {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            </button>
           </div>
         )}
-
-        <button
-          onClick={(e) => { e.stopPropagation(); handleDeleteClick(e); }}
-          disabled={isDeleting}
-          className={`absolute bottom-3 right-3 p-1.5 bg-white/90 dark:bg-gray-900/90 hover:bg-red-500 hover:text-white rounded-full text-gray-700 dark:text-gray-200 shadow-md transition-all duration-200 disabled:opacity-50 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
-          title="Remove listing"
-        >
-          {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-        </button>
 
         {listing.images.length > 1 && (
           <div className={`absolute inset-0 flex items-center justify-between px-2 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
@@ -152,6 +167,22 @@ const ListingCard = ({ listing, onDelete, isRemoving, navigate }) => {
           View Item
         </button>
       </div>
+
+      {/* Wrapped so a click anywhere in the dialog (including the overlay,
+          which itself calls onCancel) never bubbles up to the card's own
+          onClick and navigates to the listing while the dialog is open. */}
+      <div onClick={(e) => e.stopPropagation()}>
+        <ConfirmDialog
+          isOpen={showDeleteConfirm}
+          title="Delete this listing?"
+          message="This can't be undone — the listing and its images will be permanently removed."
+          confirmLabel="Delete"
+          variant="danger"
+          isLoading={isDeleting}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      </div>
     </div>
   );
 };
@@ -161,7 +192,7 @@ const ListingCard = ({ listing, onDelete, isRemoving, navigate }) => {
 // currentPath: passed down from App.jsx as "/marketplace" or
 // "/marketplace?search=...", so the Navbar's search box can drive this
 // page without a real router. We parse the ?search= param out of it below.
-const HomePage = ({ navigate, currentPath = '/marketplace' }) => {
+const HomePage = ({ navigate, currentPath = '/marketplace', currentUser }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [listings, setListings] = useState([]);
@@ -320,6 +351,7 @@ const HomePage = ({ navigate, currentPath = '/marketplace' }) => {
                   onDelete={handleDelete}
                   isRemoving={removingIds.has(item._id)}
                   navigate={navigate}
+                  currentUser={currentUser}
                 />
               ))}
             </div>
