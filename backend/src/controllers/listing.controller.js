@@ -1,5 +1,6 @@
 const { Listing } = require("../models/Listing");
 const { User } = require("../models/User");
+const { Conversation } = require("../models/Conversation");
 const cloudinary = require("../utils/cloudinary");
 const { upload, uploadToCloudinary } = require("../middleware/upload.middleware");
 const wrapAsync = require("../utils/wrapAsync");
@@ -270,6 +271,16 @@ const deleteListing = wrapAsync(async (req, res) => {
     });
   }
 
+  // NEW: a sold listing is locked from further changes — including
+  // deletion — once a chat deal has closed it out. Without this, a seller
+  // (or a bug) could delete the listing a buyer just paid for offline,
+  // wiping the record that the deal ever happened.
+  if (listing.status === "Sold") {
+    return res.status(400).json({
+      message: "A sold listing can't be deleted.",
+    });
+  }
+
   await Promise.all(
     listing.images.map((url) => cloudinary.uploader.destroy(getPublicId(url)))
   );
@@ -292,17 +303,33 @@ const updateListingStatus = wrapAsync(async (req, res) => {
     });
   }
 
-  const listing = await Listing.findOneAndUpdate(
-    { _id: req.params.id, seller: req.user._id },
-    { status },
-    { new: true }
-  );
-
+  const listing = await Listing.findOne({ _id: req.params.id, seller: req.user._id });
   if (!listing) {
     return res.status(404).json({
       message: "Listing not found or you are not the owner",
     });
   }
+
+  // NEW: once a chat deal has locked on this listing, its "Sold" status is
+  // no longer just a manual toggle — moving it back to "Listed" would
+  // contradict a locked deal that a buyer already confirmed a price on.
+  // Manual Listed -> Sold (no chat deal involved, e.g. sold in person) is
+  // still allowed; only a reversal AWAY from Sold is blocked once a deal
+  // is locked.
+  if (listing.status === "Sold" && status === "Listed") {
+    const hasLockedDeal = await Conversation.exists({
+      listing: listing._id,
+      dealLocked: true,
+    });
+    if (hasLockedDeal) {
+      return res.status(400).json({
+        message: "This listing has a confirmed chat deal and can't be relisted.",
+      });
+    }
+  }
+
+  listing.status = status;
+  await listing.save();
 
   res.status(200).json({ message: `Listing marked as ${status}`, listing });
 });
