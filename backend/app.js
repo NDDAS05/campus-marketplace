@@ -31,6 +31,7 @@ app.use("/api/auth",authRoutes);
 app.use("/api/listings", listingRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/chats", chatRoutes);
 
 app.get("/api/test",(req,res)=>{
     res.json({message:"Campus MarketPlace API is Running Perfectly"});
