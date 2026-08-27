@@ -1,1 +1,0 @@
-# Campus Marketplace for Finding Your Perfect Items and Services

@@ -153,7 +153,7 @@ export default function App() {
           : <AuthPage mode="login" onAuthSuccess={handleAuthSuccess} navigate={navigate} message="Please log in to view your profile" />;
       case '/messages':
         return isLoggedIn
-          ? <MessagesPage />
+          ? <MessagesPage navigate={navigate} currentPath={currentPath} currentUser={user} />
           : <AuthPage mode="login" onAuthSuccess={handleAuthSuccess} navigate={navigate} message="Please log in to view your messages" />;
       case '/create':
         return isLoggedIn

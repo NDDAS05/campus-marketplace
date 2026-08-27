@@ -598,8 +598,15 @@ const ListingDetailPage = ({ listingId, navigate, currentUser }) => {
             <PillButton
               variant="secondary"
               icon={MessageCircle}
-              disabled
-              tooltip="Chat isn't built yet — coming soon"
+              onClick={() => {
+                const params = new URLSearchParams({
+                  listing: listing._id,
+                  seller: listing.seller._id,
+                });
+                navigate(`/messages?${params.toString()}`);
+              }}
+              disabled={!currentUser || !listing.seller?._id}
+              tooltip={!currentUser ? "Log in to chat with the seller" : "Chat with the seller about this item"}
             >
               Chat with Seller
             </PillButton>

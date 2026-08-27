@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, User, Plus, Menu, X, Sun, Moon } from 'lucide-react';
+import { Search, User, Plus, Menu, X, Sun, Moon, MessageCircle } from 'lucide-react';
 
 const Navbar = ({ isLoggedIn, onLogin, onLogout, navigate, theme, toggleTheme, currentPath = '/marketplace' }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -11,6 +11,10 @@ const Navbar = ({ isLoggedIn, onLogin, onLogout, navigate, theme, toggleTheme, c
   // renders there. Include the querystring variant so search results
   // (/marketplace?search=...) still count as home.
   const isHome = currentPath === '/marketplace' || currentPath.startsWith('/marketplace?');
+
+  // Same idea for the Chat icon — lit up while on /messages (including a
+  // deep link like /messages?listing=...&seller=...).
+  const isMessages = currentPath === '/messages' || currentPath.startsWith('/messages?');
 
   const handleNavigate = (path) => {
     navigate(path);
@@ -80,6 +84,17 @@ const Navbar = ({ isLoggedIn, onLogin, onLogout, navigate, theme, toggleTheme, c
             </>
           ) : (
             <>
+              <button
+                onClick={() => handleNavigate('/messages')}
+                className={`relative p-2 rounded-full transition-colors ${
+                  isMessages
+                    ? 'bg-gray-100 dark:bg-gray-800 text-black dark:text-white'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+                title="Messages"
+              >
+                <MessageCircle className="w-5 h-5" />
+              </button>
               <button onClick={() => handleNavigate('/create')} className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-black dark:bg-white text-white dark:text-black font-medium hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors">
                 <Plus className="w-4 h-4" /> Post Item
               </button>
@@ -113,6 +128,15 @@ const Navbar = ({ isLoggedIn, onLogin, onLogout, navigate, theme, toggleTheme, c
               className="text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white"
             >
               <Search className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+          )}
+
+          {isLoggedIn && (
+            <button
+              onClick={() => handleNavigate('/messages')}
+              className={`text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white ${isMessages ? 'text-black dark:text-white' : ''}`}
+            >
+              <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           )}
 
@@ -174,6 +198,7 @@ const Navbar = ({ isLoggedIn, onLogin, onLogout, navigate, theme, toggleTheme, c
 
           {isLoggedIn ? (
             <>
+              <button onClick={() => handleNavigate('/messages')} className="w-full py-2 text-left font-medium text-gray-800 dark:text-gray-200">Messages</button>
               <button onClick={() => handleNavigate('/profile')} className="w-full py-2 text-left font-medium text-gray-800 dark:text-gray-200">My Profile</button>
               <button onClick={() => { onLogout(); setIsMobileMenuOpen(false); }} className="w-full py-2 text-left font-medium text-red-600 dark:text-red-500">Logout</button>
             </>
