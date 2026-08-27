@@ -113,4 +113,14 @@ export const userApi = {
     request(`/api/users/wishlist/${listingId}`, { method: "DELETE" }),
 };
 
+export const chatApi = {
+  getInbox: () => request(`/api/chats`),
+  createOrGet: (listingId, sellerId) => request(`/api/chats`, { method: 'POST', body: JSON.stringify({ listingId, sellerId }) }),
+  getMessages: (id, cursor) => request(`/api/chats/${id}/messages${cursor ? `?cursor=${cursor}` : ''}`),
+  markRead: (id) => request(`/api/chats/${id}/read`, { method: 'PATCH' }),
+  proposePrice: (id, price) => request(`/api/chats/${id}/price`, { method: 'PATCH', body: JSON.stringify({ price }) }),
+  confirmPrice: (id) => request(`/api/chats/${id}/confirm-price`, { method: 'PATCH' }),
+  unconfirmPrice: (id) => request(`/api/chats/${id}/unconfirm-price`, { method: 'PATCH' })
+};
+
 export { API_BASE };
